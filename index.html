@@ -3,505 +3,459 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>סטטיסטיקת אזעקות 48 שעות | צבע אדום</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700&family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
+<title>זמן בטוח | סיכוי אזעקה בזמן אמת</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Hebrew:wght@300;400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:        #0e1117;
-  --surface:   #161b27;
-  --surface2:  #1c2333;
-  --border:    #252e42;
-  --accent:    #5b8dee;
-  --accent-dim:rgba(91,141,238,0.12);
-  --coral:     #e07b6a;
-  --coral-dim: rgba(224,123,106,0.12);
-  --teal:      #4db8a4;
-  --teal-dim:  rgba(77,184,164,0.12);
-  --text:      #d8deeb;
-  --text2:     #8a93a8;
-  --muted:     #4e5770;
-  --radius:    14px;
+  --ink:       #0d0f14;
+  --paper:     #f5f0e8;
+  --warm:      #ece6d8;
+  --border:    #c8bfaa;
+  --muted:     #8a8070;
+  --safe:      #2d6a4f;
+  --safe-bg:   #e8f4ee;
+  --warn:      #b5621a;
+  --warn-bg:   #fdf0e4;
+  --danger:    #8b1a1a;
+  --danger-bg: #fce8e8;
+  --accent:    #1a3a5c;
+  --r:         10px;
+  --mono:      'JetBrains Mono', monospace;
+  --serif:     'Noto Serif Hebrew', serif;
 }
-*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl;-webkit-font-smoothing:antialiased;}
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--serif);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
+}
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:9999;
+  opacity:.018;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px;
+}
 
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(91,141,238,0.05) 0%,transparent 70%),radial-gradient(ellipse 40% 30% at 80% 80%,rgba(77,184,164,0.04) 0%,transparent 70%);pointer-events:none;z-index:0;}
+.page { max-width:660px; margin:0 auto; padding:0 20px 60px; }
 
 /* Header */
-header{position:relative;z-index:1;padding:28px 32px 24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;}
-.header-left h1{font-family:'Rubik',sans-serif;font-size:clamp(22px,4vw,36px);font-weight:700;line-height:1.1;}
-.header-left h1 em{font-style:normal;color:var(--accent);}
-.header-left .sub{font-size:12px;color:var(--text2);margin-top:5px;line-height:1.5;}
-.notice-48h{display:inline-flex;align-items:center;gap:6px;background:var(--accent-dim);border:1px solid rgba(91,141,238,.3);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--accent);margin-top:8px;}
-.live-pill{display:flex;align-items:center;gap:7px;background:rgba(77,184,164,.1);border:1px solid rgba(77,184,164,.3);border-radius:999px;padding:7px 16px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.8px;white-space:nowrap;}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);animation:pulse 2s ease-in-out infinite;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+header { border-bottom:2px solid var(--ink); padding:28px 0 20px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.h-title { font-size:clamp(26px,6vw,42px); font-weight:900; line-height:1.05; letter-spacing:-1px; }
+.h-title em { font-style:normal; border-bottom:3px solid var(--ink); }
+.h-meta { font-size:11px; color:var(--muted); margin-top:6px; font-family:var(--mono); }
+.live-badge { display:flex; align-items:center; gap:6px; border:1.5px solid var(--ink); border-radius:4px; padding:6px 12px; font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:1px; white-space:nowrap; margin-top:4px; }
+.live-dot { width:6px; height:6px; border-radius:50%; background:var(--ink); animation:blink 1.6s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.1} }
 
-/* Stats strip */
-.stats-strip{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
-.stat{padding:18px 24px;border-left:1px solid var(--border);transition:background .2s;}
-.stat:last-child{border-left:none;}
-.stat:hover{background:var(--surface);}
-.stat-n{font-family:'Rubik',sans-serif;font-size:30px;font-weight:700;color:var(--accent);line-height:1;}
-.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;}
+/* Disclaimer */
+.disclaimer { border:1.5px solid var(--border); border-right:4px solid var(--warn); background:var(--warn-bg); border-radius:0 var(--r) var(--r) 0; padding:12px 16px; font-size:12px; color:var(--warn); margin:22px 0; line-height:1.6; }
 
-/* Main */
-.main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:28px 32px;}
+/* Score card */
+.score-card { border:2px solid var(--ink); border-radius:var(--r); overflow:hidden; margin-bottom:24px; transition:border-color .4s,box-shadow .4s; }
+.score-card.safe   { border-color:var(--safe);   box-shadow:0 0 0 4px rgba(45,106,79,.08); }
+.score-card.warn   { border-color:var(--warn);   box-shadow:0 0 0 4px rgba(181,98,26,.08); }
+.score-card.danger { border-color:var(--danger); box-shadow:0 0 0 4px rgba(139,26,26,.1); }
 
-.stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
-.stitle::after{content:'';flex:1;height:1px;background:var(--border);}
+.sc-head { padding:16px 20px 14px; border-bottom:1.5px solid currentColor; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; }
+.score-card.safe   .sc-head { background:var(--safe-bg);   color:var(--safe); }
+.score-card.warn   .sc-head { background:var(--warn-bg);   color:var(--warn); }
+.score-card.danger .sc-head { background:var(--danger-bg); color:var(--danger); }
+.sc-head-label { font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+.sc-head-city  { font-weight:700; font-size:15px; color:var(--ink); }
+.sc-head-time  { font-family:var(--mono); font-size:10px; color:var(--muted); }
 
-/* Probability widget */
-.prob-widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 26px;margin-bottom:28px;animation:fadeUp .5s ease both;}
-.prob-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;}
-.prob-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap;}
-.prob-select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;outline:none;cursor:pointer;transition:border-color .2s,box-shadow .2s;direction:rtl;}
-.prob-select:focus{border-color:rgba(91,141,238,.5);box-shadow:0 0 0 3px rgba(91,141,238,.08);}
-.prob-result{display:flex;align-items:stretch;gap:16px;flex-wrap:wrap;}
-.prob-card{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;}
-.prob-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3);}
-.prob-card.high{border-color:rgba(224,123,106,.35);}
-.prob-card.med {border-color:rgba(91,141,238,.35);}
-.prob-card.low {border-color:rgba(77,184,164,.35);}
-.prob-card-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
-.prob-card-text{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px;}
-.prob-card-text strong{color:var(--text);font-weight:700;}
-.prob-pct-wrap{display:flex;align-items:flex-end;gap:6px;}
-.prob-pct{font-family:'Rubik',sans-serif;font-size:52px;font-weight:700;line-height:1;}
-.prob-pct-sym{font-family:'Rubik',sans-serif;font-size:24px;font-weight:600;color:var(--muted);padding-bottom:8px;}
-.prob-card.high .prob-pct{color:var(--coral);}
-.prob-card.med  .prob-pct{color:var(--accent);}
-.prob-card.low  .prob-pct{color:var(--teal);}
-.prob-bar-wrap{height:5px;background:var(--border);border-radius:3px;margin-top:14px;overflow:hidden;}
-.prob-bar-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.34,1.56,.64,1);}
-.prob-card.high .prob-bar-fill{background:linear-gradient(90deg,var(--coral),rgba(224,123,106,.4));}
-.prob-card.med  .prob-bar-fill{background:linear-gradient(90deg,var(--accent),rgba(91,141,238,.4));}
-.prob-card.low  .prob-bar-fill{background:linear-gradient(90deg,var(--teal),rgba(77,184,164,.4));}
-.prob-glow{position:absolute;top:-30px;left:-30px;width:120px;height:120px;border-radius:50%;opacity:.06;pointer-events:none;}
-.prob-card.high .prob-glow{background:var(--coral);}
-.prob-card.med  .prob-glow{background:var(--accent);}
-.prob-card.low  .prob-glow{background:var(--teal);}
-@media(max-width:600px){.prob-controls{gap:8px;}.prob-select{width:100%;}.prob-card{min-width:100%;}.prob-pct{font-size:42px;}}
+.sc-body { padding:24px 20px; display:flex; align-items:center; gap:24px; flex-wrap:wrap; }
+.sc-num { font-size:clamp(80px,20vw,128px); font-weight:900; line-height:1; letter-spacing:-4px; transition:color .4s; flex-shrink:0; }
+.score-card.safe   .sc-num { color:var(--safe); }
+.score-card.warn   .sc-num { color:var(--warn); }
+.score-card.danger .sc-num { color:var(--danger); }
+.sc-num .sym { font-size:.4em; font-weight:400; letter-spacing:0; color:var(--muted); }
 
-/* Chart */
-.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 20px 0;margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.chart{display:flex;align-items:flex-end;gap:4px;height:180px;padding-bottom:28px;position:relative;min-width:520px;}
-.chart-lines{position:absolute;inset:0 0 28px 0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;}
-.chart-line{width:100%;height:1px;background:var(--border);opacity:.6;}
-.col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;cursor:pointer;position:relative;}
-.col:hover .bar{filter:brightness(1.25);}
-.col:hover .tip{opacity:1;transform:translateY(-2px);}
-.bar{width:100%;max-width:28px;border-radius:5px 5px 0 0;transition:filter .2s;animation:grow .55s cubic-bezier(.34,1.56,.64,1) both;}
-@keyframes grow{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
-.bar.is-max{background:linear-gradient(180deg,var(--coral),rgba(224,123,106,.2));}
-.bar.is-min{background:linear-gradient(180deg,var(--teal),rgba(77,184,164,.2));}
-.bar.norm{background:linear-gradient(180deg,var(--accent),rgba(91,141,238,.2));}
-.tip{position:absolute;top:-26px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:10px;font-weight:600;color:var(--text);opacity:0;transform:translateY(2px);transition:all .15s;white-space:nowrap;pointer-events:none;}
-.col-lbl{position:absolute;bottom:6px;font-size:9px;color:var(--muted);}
+.sc-text { flex:1; min-width:160px; }
+.sc-sentence { font-size:clamp(14px,3.5vw,18px); font-weight:700; line-height:1.5; margin-bottom:10px; }
+.sc-sentence em { font-style:normal; text-decoration:underline; text-underline-offset:3px; }
+.sc-sub { font-size:11px; color:var(--muted); line-height:1.7; font-family:var(--mono); }
 
-/* City */
-.city-search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;direction:rtl;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:16px;display:block;}
-.city-search:focus{border-color:rgba(91,141,238,.5);box-shadow:0 0 0 3px rgba(91,141,238,.08);}
-.city-search::placeholder{color:var(--muted);}
-.city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:14px;}
-.city-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:12px;transition:border-color .2s,transform .2s,box-shadow .2s;animation:fadeUp .4s ease both;}
-.city-card:hover{border-color:rgba(91,141,238,.3);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.2);}
-.city-rank{font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;color:var(--muted);min-width:26px;text-align:center;}
-.city-rank.gold{color:#e6b84a;}.city-rank.silver{color:#9faab8;}.city-rank.bronze{color:#b07a4e;}
-.city-info{flex:1;min-width:0;}
-.city-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.city-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden;}
-.city-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--teal));transition:width .7s cubic-bezier(.34,1.56,.64,1);}
-.city-count{font-family:'Rubik',sans-serif;font-size:22px;font-weight:700;color:var(--accent);line-height:1;text-align:center;}
-.city-pct{font-size:10px;color:var(--muted);text-align:center;margin-top:1px;}
-.show-more{display:block;width:100%;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-family:'Heebo',sans-serif;font-size:13px;cursor:pointer;text-align:center;margin-bottom:28px;transition:all .2s;}
-.show-more:hover{background:var(--surface2);color:var(--text);border-color:rgba(91,141,238,.3);}
+.sc-bar-wrap { height:5px; background:var(--warm); margin:0 20px 20px; border-radius:3px; overflow:hidden; }
+.sc-bar { height:100%; border-radius:3px; transition:width .9s cubic-bezier(.34,1.56,.64,1), background .4s; }
+.score-card.safe   .sc-bar { background:var(--safe); }
+.score-card.warn   .sc-bar { background:var(--warn); }
+.score-card.danger .sc-bar { background:var(--danger); }
 
-/* Table */
-.table-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;}
-table{width:100%;border-collapse:collapse;}
-thead{background:var(--surface2);border-bottom:1px solid var(--border);}
-th{padding:11px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:600;text-align:right;}
-td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--border);transition:background .15s;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:var(--surface2);}
-.td-rank{font-family:'Rubik',sans-serif;font-size:15px;font-weight:600;color:var(--muted);}
-.td-n{font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;}
-.td-n.hi{color:var(--coral);}.td-n.lo{color:var(--teal);}.td-n.mid{color:var(--accent);}
-.bar-i{height:4px;border-radius:2px;display:inline-block;vertical-align:middle;}
+/* Controls */
+.ctrl-box { border:1.5px solid var(--border); border-radius:var(--r); overflow:hidden; margin-bottom:24px; }
+.ctrl-head { padding:12px 18px; background:var(--warm); border-bottom:1.5px solid var(--border); font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); }
+.ctrl-body { padding:18px; display:flex; flex-direction:column; gap:18px; }
+.field-label { font-size:12px; font-weight:700; font-family:var(--mono); margin-bottom:8px; }
+.field-label small { font-weight:400; color:var(--muted); }
 
-/* Loading / error */
-.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:14px;color:var(--muted);position:relative;z-index:1;}
-.spinner{width:34px;height:34px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite;}
+.pills { display:flex; flex-wrap:wrap; gap:7px; }
+.pill { border:1.5px solid var(--border); border-radius:6px; padding:8px 15px; font-family:var(--mono); font-size:12px; font-weight:700; background:white; cursor:pointer; transition:all .15s; user-select:none; }
+.pill:hover { border-color:var(--ink); }
+.pill.on { background:var(--ink); color:var(--paper); border-color:var(--ink); }
+
+.city-input { width:100%; border:1.5px solid var(--border); border-radius:7px; padding:10px 14px; font-family:var(--serif); font-size:14px; background:white; color:var(--ink); outline:none; direction:rtl; transition:border-color .2s; }
+.city-input:focus { border-color:var(--ink); }
+.city-input::placeholder { color:var(--muted); }
+
+/* Stats */
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--border); border:1.5px solid var(--border); border-radius:var(--r); overflow:hidden; margin-bottom:24px; }
+.stat-c { background:white; padding:16px 12px; text-align:center; }
+.stat-n { font-family:var(--mono); font-size:20px; font-weight:700; color:var(--accent); line-height:1; }
+.stat-l { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-top:4px; font-family:var(--mono); line-height:1.3; }
+
+/* Timeline */
+.sec-title { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+.sec-title::after { content:''; flex:1; height:1px; background:var(--border); }
+.tl-box { border:1.5px solid var(--border); border-radius:var(--r); padding:16px 14px 4px; margin-bottom:24px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.tl { display:flex; align-items:flex-end; gap:3px; height:90px; padding-bottom:20px; position:relative; min-width:460px; }
+.tl-grid { position:absolute; inset:0 0 20px 0; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; }
+.tl-line { width:100%; height:1px; background:var(--border); }
+.tl-col { flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end; cursor:pointer; position:relative; }
+.tl-col:hover .tl-bar { opacity:.75; }
+.tl-col:hover .tl-tip { opacity:1; }
+.tl-bar { width:100%; max-width:20px; border-radius:3px 3px 0 0; background:var(--accent); opacity:.45; animation:grow .4s ease both; }
+.tl-bar.hot { opacity:.9; background:var(--danger); }
+@keyframes grow { from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom} }
+.tl-tip { position:absolute; bottom:108%; background:var(--ink); color:var(--paper); border-radius:4px; padding:2px 6px; font-family:var(--mono); font-size:9px; opacity:0; transition:opacity .15s; white-space:nowrap; pointer-events:none; z-index:10; }
+.tl-lbl { position:absolute; bottom:4px; font-family:var(--mono); font-size:8px; color:var(--muted); }
+
+/* How it works */
+.how-box { border:1.5px solid var(--border); border-radius:var(--r); padding:18px; margin-bottom:24px; background:var(--warm); }
+.how-box h3 { font-size:13px; font-weight:700; margin-bottom:10px; }
+.how-box p  { font-size:12px; color:var(--muted); line-height:1.8; }
+
+/* Loading */
+.loading { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:220px; gap:14px; color:var(--muted); }
+.loader { width:28px; height:28px; border:2px solid var(--border); border-top-color:var(--ink); border-radius:50%; animation:spin .7s linear infinite; }
 @keyframes spin{to{transform:rotate(360deg)}}
-.err-box{background:var(--coral-dim);border:1px solid rgba(224,123,106,.3);border-radius:var(--radius);padding:28px;text-align:center;color:var(--coral);font-size:13px;line-height:1.8;}
-.footer-note{font-size:11px;color:var(--muted);text-align:left;padding-bottom:32px;line-height:1.6;}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+footer { border-top:1.5px solid var(--border); padding:18px 0; font-family:var(--mono); font-size:10px; color:var(--muted); display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; }
 
-/* Mobile */
-@media(max-width:600px){
-  header{padding:18px 16px 14px;}
-  .main{padding:16px;}
-  .stats-strip{grid-template-columns:repeat(2,1fr);}
-  .stat{padding:12px 16px;}
-  .stat-n{font-size:26px;}
-  .highlights{grid-template-columns:1fr;}
-  .hl{padding:16px 18px;}
-  .hl-val{font-size:26px;}
-  .city-grid{grid-template-columns:1fr;}
-  .chart-box{padding:12px 12px 0;}
-  thead{display:none;}
-  tr{display:block;border-bottom:1px solid var(--border);}
-  tr:last-child{border-bottom:none;}
-  td{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:none;}
-  td::before{content:attr(data-label);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-  td:first-child{padding-top:14px;}
-  td:last-child{padding-bottom:14px;}
-}
-@media(max-width:400px){
-  header h1{font-size:19px;}
-  .stat-n{font-size:22px;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-in { animation:fadeIn .3s ease both; }
+
+@media(max-width:500px){
+  .sc-body { flex-direction:column; gap:12px; }
+  .sc-num  { font-size:88px; }
+  .stat-n  { font-size:16px; }
+  header   { flex-direction:column; }
 }
 </style>
 </head>
 <body>
+<div class="page">
 
 <header>
-  <div class="header-left">
-    <h1>סטטיסטיקת <em>אזעקות</em></h1>
-    <div class="sub" id="hdr-sub">מתחבר לשרת...</div>
-    <div class="notice-48h">🕐 הנתונים המוצגים מייצגים את <strong>48 השעות האחרונות</strong> בלבד</div>
+  <div>
+    <div class="h-title">זמן <em>בטוח</em></div>
+    <div class="h-meta" id="hdr-meta">מתחבר לשרת...</div>
   </div>
-  <div class="live-pill"><span class="live-dot"></span>עדכון חי · כל 60 שניות</div>
+  <div>
+    <div class="live-badge"><span class="live-dot"></span>LIVE · כל 30 שניות</div>
+  </div>
 </header>
 
-<div class="stats-strip" id="strip" style="display:none">
-  <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">סה"כ אזעקות</div></div>
-  <div class="stat"><div class="stat-n" id="s-events">0</div><div class="stat-l">אירועים</div></div>
-  <div class="stat"><div class="stat-n" id="s-cities">0</div><div class="stat-l">יישובים</div></div>
-  <div class="stat"><div class="stat-n" id="s-updated">—</div><div class="stat-l">עודכן</div></div>
+<div class="disclaimer">⚠️ <strong>חשוב:</strong> אפליקציה זו אינה תחליף להנחיות פיקוד העורף. פעלו תמיד לפי ההוראות הרשמיות.</div>
+
+<div id="loading" class="loading">
+  <div class="loader"></div>
+  <div>טוען נתוני התרעות בזמן אמת...</div>
 </div>
 
-<div class="main">
-  <div id="loading" class="loading">
-    <div class="spinner"></div>
-    <div>טוען נתונים...</div>
+<div id="app" style="display:none">
+
+  <!-- Score -->
+  <div class="score-card" id="score-card">
+    <div class="sc-head">
+      <div>
+        <div class="sc-head-label">ציון בטיחות</div>
+        <div class="sc-head-city" id="sc-city">כל הארץ</div>
+      </div>
+      <div class="sc-head-time" id="sc-time"></div>
+    </div>
+    <div class="sc-body">
+      <div class="sc-num" id="sc-num">—<span class="sym">%</span></div>
+      <div class="sc-text">
+        <div class="sc-sentence" id="sc-sent">מחשב...</div>
+        <div class="sc-sub" id="sc-sub"></div>
+      </div>
+    </div>
+    <div class="sc-bar-wrap"><div class="sc-bar" id="sc-bar" style="width:0%"></div></div>
   </div>
 
-  <div id="content" style="display:none">
-
-    <div class="stitle">סיכוי לאזעקה · 48 שעות אחרונות</div>
-    <div class="prob-widget">
-      <div class="prob-controls">
-        <span class="prob-label">בחר שעה:</span>
-        <select class="prob-select" id="prob-hour">
-          <option value="now">השעה הנוכחית</option>
-        </select>
-        <span class="prob-label">עיר:</span>
-        <div style="position:relative;flex:1;min-width:160px;">
-          <input class="prob-select" id="prob-city" type="text"
-            placeholder="כל הארץ — הקלד לחיפוש..."
-            autocomplete="off" list="prob-city-list" style="width:100%">
-          <datalist id="prob-city-list"></datalist>
+  <!-- Controls -->
+  <div class="ctrl-box">
+    <div class="ctrl-head">הגדרות פעילות</div>
+    <div class="ctrl-body">
+      <div>
+        <div class="field-label">משך הפעילות <small>— כמה זמן לא תוכל לרוץ לממ"ד?</small></div>
+        <div class="pills" id="pills">
+          <div class="pill" data-min="5">5 דק׳</div>
+          <div class="pill on" data-min="10">10 דק׳</div>
+          <div class="pill" data-min="15">15 דק׳</div>
+          <div class="pill" data-min="20">20 דק׳</div>
+          <div class="pill" data-min="30">30 דק׳</div>
+          <div class="pill" data-min="45">45 דק׳</div>
+          <div class="pill" data-min="60">שעה</div>
         </div>
       </div>
-      <div class="prob-result" id="prob-result">
-        <div class="prob-card med" style="min-width:100%">
-          <div class="prob-glow"></div>
-          <div class="prob-card-lbl">טוען נתונים...</div>
-        </div>
+      <div>
+        <div class="field-label">עיר <small>— ריק = כל הארץ</small></div>
+        <input class="city-input" id="city-input" type="text"
+          placeholder="הקלד שם עיר..." autocomplete="off" list="city-dl">
+        <datalist id="city-dl"></datalist>
       </div>
     </div>
-
-    <div class="stitle">גרף לפי שעות — שעון ישראל</div>
-    <div class="chart-box">
-      <div class="chart" id="chart">
-        <div class="chart-lines">
-          <div class="chart-line"></div>
-          <div class="chart-line"></div>
-          <div class="chart-line"></div>
-          <div class="chart-line"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="stitle">סטטיסטיקת ישובים — ממוין מגבוה לנמוך</div>
-    <input class="city-search" id="city-search" type="text" placeholder="🔍 חיפוש ישוב...">
-    <div class="city-grid" id="city-grid"></div>
-    <button class="show-more" id="show-more" style="display:none">הצג עוד ▼</button>
-
-    <div class="stitle">טבלת שעות מלאה — ממוין מגבוה לנמוך</div>
-    <div class="table-box">
-      <table>
-        <thead><tr><th>#</th><th>טווח שעות</th><th>אזעקות</th><th>יחסי לשיא</th></tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-
-    <div class="footer-note" id="footer"></div>
   </div>
 
-  <div id="err" style="display:none"></div>
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-c">
+      <div class="stat-n" id="st-since">—</div>
+      <div class="stat-l">זמן מאז<br>ההתרעה האחרונה</div>
+    </div>
+    <div class="stat-c">
+      <div class="stat-n" id="st-avg">—</div>
+      <div class="stat-l">מרווח ממוצע<br>6 שעות אחרונות</div>
+    </div>
+    <div class="stat-c">
+      <div class="stat-n" id="st-24h">—</div>
+      <div class="stat-l">התרעות<br>24 שעות</div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="sec-title">ציר זמן — 24 שעות אחרונות</div>
+  <div class="tl-box">
+    <div class="tl" id="tl">
+      <div class="tl-grid">
+        <div class="tl-line"></div>
+        <div class="tl-line"></div>
+        <div class="tl-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- How -->
+  <div class="how-box">
+    <h3>⚙️ איך זה עובד</h3>
+    <p>
+      הציון מבוסס על <strong>4 פרמטרים בזמן אמת</strong> מפיקוד העורף:
+      זמן מאז ההתרעה האחרונה · מרווח ממוצע בין התרעות ב-6 שעות האחרונות ·
+      מגמת התדירות (עולה / יורדת / יציבה) · סך ההתרעות ב-24 שעות.
+      משך הפעילות שבחרת מחושב לפי התפלגות מעריכית — ככל שהמרווח הממוצע קצר יותר
+      ופעילותך ארוכה יותר, הסיכוי לאזעקה במהלכה גדל.
+      <br><br><strong>מקור נתונים:</strong> api.tzevaadom.co.il / פיקוד העורף
+    </p>
+  </div>
+
 </div>
 
+<footer>
+  <span>api.tzevaadom.co.il · פיקוד העורף</span>
+  <span id="footer-t"></span>
+  <span>אינה תחליף להנחיות פיקוד העורף</span>
+</footer>
+
+</div>
 <script>
-const PROXY       = 'https://api.codetabs.com/v1/proxy/?quest=';
-const HISTORY_URL = 'https://api.tzevaadom.co.il/alerts-history/';
-const LIVE_URL    = 'https://api.tzevaadom.co.il/notifications';
-const REFRESH_MS  = 60_000;
+const PROXY    = 'https://api.codetabs.com/v1/proxy/?quest=';
+const HIST_URL = 'https://api.tzevaadom.co.il/alerts-history/';
+const LIVE_URL = 'https://api.tzevaadom.co.il/notifications';
+const REFRESH  = 30000;
 
-function ilHour(ts) {
-  return parseInt(new Date(ts*1000).toLocaleString('en-US',
-    { timeZone:'Asia/Jerusalem', hour:'numeric', hour12:false }), 10);
-}
-function hLabel(h) {
-  return `${String(h).padStart(2,'0')}:00 – ${String((h+1)%24).padStart(2,'0')}:00`;
-}
+let allAlerts  = [];
+let cityCounts = {};
+let selDur     = 10;   // minutes
+let selCity    = '';
+let citiesInit = false;
+
 async function pFetch(url) {
   const r = await fetch(PROXY + encodeURIComponent(url));
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
-async function fetchAll() {
-  // The CORS proxy always returns the same latest 50 events regardless of offset,
-  // so we just fetch once.
-  const page = await pFetch(HISTORY_URL);
-  const pages = (page && page.length) ? page : [];
-  try {
-    const live = await pFetch(LIVE_URL);
-    if (live && live.length) pages.unshift({ id:'live', alerts:live });
-  } catch {}
-  return pages;
+
+async function fetchAlerts() {
+  const [hist, live] = await Promise.allSettled([pFetch(HIST_URL), pFetch(LIVE_URL)]);
+  let alerts = [];
+  if (hist.status === 'fulfilled' && Array.isArray(hist.value))
+    alerts = hist.value.flatMap(e => (e.alerts||[]).filter(a => !a.isDrill));
+  if (live.status === 'fulfilled' && Array.isArray(live.value) && live.value.length)
+    alerts = [...live.value.filter(a => !a.isDrill), ...alerts];
+  return alerts.sort((a,b) => b.time - a.time);
 }
 
-function analyze(pages) {
-  const alerts = pages.flatMap(e => (e.alerts||[]).filter(a => !a.isDrill));
-  const hourCounts = new Array(24).fill(0);
-  const cityCounts = {};
-  alerts.forEach(a => {
-    hourCounts[ilHour(a.time)]++;
-    (a.cities||[]).forEach(c => { cityCounts[c]=(cityCounts[c]||0)+1; });
-  });
-  const times = alerts.map(a=>a.time);
-  return { alerts, hourCounts, cityCounts,
-    minTs: times.length ? Math.min(...times) : Date.now()/1000,
-    maxTs: times.length ? Math.max(...times) : Date.now()/1000,
-    eventCount: pages.length };
+function calcScore(alerts, city, durMin) {
+  const now = Date.now() / 1000;
+  const src = city ? alerts.filter(a => (a.cities||[]).includes(city)) : alerts;
+  if (!src.length) return { score:85, level:'safe', trend:'stable', since:9999, avgGap:3600, cnt24:0 };
+
+  const times = src.map(a=>a.time).sort((a,b)=>b-a);
+  const since = now - times[0];
+
+  // Average gap last 6h
+  const t6h = now - 21600;
+  const r6 = times.filter(t => t >= t6h);
+  let avgGap = since;
+  if (r6.length > 1) {
+    const gaps = [];
+    for (let i=0;i<r6.length-1;i++) gaps.push(r6[i]-r6[i+1]);
+    avgGap = gaps.reduce((a,b)=>a+b,0)/gaps.length;
+  }
+
+  // Trend: last 3h vs prev 3h
+  const t3h = now - 10800;
+  const cntA = times.filter(t=>t>=t3h).length;
+  const cntB = times.filter(t=>t>=t6h && t<t3h).length;
+  const trend = cntA > cntB*1.3 ? 'up' : cntA < cntB*0.7 ? 'down' : 'stable';
+
+  // 24h count
+  const cnt24 = times.filter(t=>t >= now-86400).length;
+
+  // Exponential distribution: P(alert in T) = 1 - exp(-T/avgGap)
+  const durSec = durMin * 60;
+  let p = 1 - Math.exp(-durSec / Math.max(avgGap, 30));
+
+  // Adjust for trend
+  if (trend === 'up')   p = Math.min(p * 1.35, 1);
+  if (trend === 'down') p = p * 0.72;
+
+  // Very recent alert → more danger
+  if (since < 240)         p = Math.min(p * 1.45, 1);
+  if (since > avgGap * 2.5) p = p * 0.82;
+
+  // Volume factor
+  const vol = Math.min(cnt24 / 40, 1.8);
+  p = Math.min(p * (0.75 + vol * 0.25), 1);
+
+  const score = Math.round(p * 100);
+  return {
+    score,
+    level: score >= 55 ? 'danger' : score >= 25 ? 'warn' : 'safe',
+    trend,
+    since,
+    avgGap,
+    cnt24
+  };
 }
 
-function render({ alerts, hourCounts, cityCounts, minTs, maxTs, eventCount }) {
-  const max = Math.max(...hourCounts);
-  const min = Math.min(...hourCounts);
-  const maxH = hourCounts.indexOf(max);
-  const minH = hourCounts.indexOf(min);
-  const total = alerts.length;
+function fmtSec(s) {
+  if (s > 86400*3) return '>72ש׳';
+  if (s >= 3600) return `${(s/3600).toFixed(1)}ש׳`;
+  if (s >= 60)   return `${Math.round(s/60)}דק׳`;
+  return `${Math.round(s)}ש`;
+}
 
-  const fmtDT = ts => new Date(ts*1000).toLocaleString('he-IL',
-    { timeZone:'Asia/Jerusalem', day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+function renderScore(d) {
+  const { score, level, trend, since, avgGap, cnt24 } = d;
+  const card = document.getElementById('score-card');
+  card.className = `score-card fade-in ${level}`;
+  document.getElementById('sc-num').innerHTML = `${score}<span class="sym">%</span>`;
+  document.getElementById('sc-bar').style.width = `${score}%`;
+  document.getElementById('sc-city').textContent = selCity || 'כל הארץ';
+  document.getElementById('sc-time').textContent =
+    `עודכן ${new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}`;
 
-  document.getElementById('hdr-sub').textContent =
-    `${fmtDT(minTs)} עד ${fmtDT(maxTs)} | מקור: tzevaadom.co.il`;
-  document.getElementById('s-total').textContent  = total.toLocaleString('he');
-  document.getElementById('s-events').textContent = eventCount.toLocaleString('he');
-  document.getElementById('s-cities').textContent = Object.keys(cityCounts).length.toLocaleString('he');
-  document.getElementById('s-updated').textContent =
-    new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('strip').style.display = 'grid';
+  const durTxt = selDur >= 60 ? 'שעה' : `${selDur} דקות`;
+  const cityTxt = selCity ? ` ב${selCity}` : '';
+  const emoji = level==='safe'?'✅':level==='warn'?'⚠️':'🔴';
+  const adj   = level==='safe'?'נמוך':level==='warn'?'בינוני':'גבוה';
+  document.getElementById('sc-sent').innerHTML =
+    `${emoji} סיכוי לאזעקה במהלך <em>${durTxt}</em>${cityTxt}: <em>${adj}</em>`;
 
-  // ── Probability widget ──
-  const totalHours = 48; // API window
+  const trendTxt = trend==='up'?'↑ עולה':trend==='down'?'↓ יורדת':'→ יציבה';
+  document.getElementById('sc-sub').textContent =
+    `מגמה: ${trendTxt} · מרווח ממוצע: ${fmtSec(avgGap)} · ב-24ש׳: ${cnt24} התרעות`;
 
-  // Populate hour selector (first run only)
-  const hourSel = document.getElementById('prob-hour');
-  if (hourSel.options.length === 1) {
-    for (let h = 0; h < 24; h++) {
-      const opt = document.createElement('option');
-      opt.value = h;
-      opt.textContent = hLabel(h);
-      hourSel.appendChild(opt);
-    }
-  }
+  document.getElementById('st-since').textContent = fmtSec(since);
+  document.getElementById('st-avg').textContent   = fmtSec(avgGap);
+  document.getElementById('st-24h').textContent   = cnt24;
+}
 
-  // Populate city selector (first run only)
-  const cityDatalist = document.getElementById('prob-city-list');
-  cityDatalist.innerHTML = '';
-  Object.keys(cityCounts).sort((a,b)=>a.localeCompare(b,'he')).forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = name;
-    cityDatalist.appendChild(opt);
+function renderTimeline(alerts) {
+  const now   = Date.now() / 1000;
+  const slots = 48;  // 30-min buckets across 24h
+  const bktSz = 86400 / slots;
+  const counts = new Array(slots).fill(0);
+  alerts.filter(a => a.time > now - 86400).forEach(a => {
+    const i = Math.floor((now - a.time) / bktSz);
+    if (i >= 0 && i < slots) counts[i]++;
   });
-
-  function calcProb(hour, cityFilter) {
-    const now = new Date();
-    const nowHour = parseInt(now.toLocaleString('en-US', { timeZone:'Asia/Jerusalem', hour:'numeric', hour12:false }), 10);
-    const h = (hour === 'now') ? nowHour : parseInt(hour, 10);
-
-    let alertsInHour, totalInScope;
-    if (cityFilter) {
-      // For a specific city: how many hours in the 48h window had alerts for this city
-      const cityAlerts = alerts.filter(a => (a.cities||[]).includes(cityFilter));
-      alertsInHour = cityAlerts.filter(a => ilHour(a.time) === h).length;
-      totalInScope  = cityAlerts.length;
-    } else {
-      alertsInHour = hourCounts[h];
-      totalInScope  = total;
-    }
-
-    // Probability = fraction of "active hours" that had alerts at this hour
-    // We express it as: out of the 48h window (2 data points per hour across 2 days),
-    // how many times did an alert fire in this hour slot?
-    // Simple ratio: alertsInHour / max possible alerts per hour (we use hourCounts max as baseline)
-    const maxInAnyHour = cityFilter
-      ? Math.max(...new Array(24).fill(0).map((_,hh)=>
-          alerts.filter(a=>(a.cities||[]).includes(cityFilter)&&ilHour(a.time)===hh).length))
-      : max;
-
-    const rawPct = maxInAnyHour > 0 ? Math.round((alertsInHour / maxInAnyHour) * 100) : 0;
-
-    // Risk level
-    const level = rawPct >= 60 ? 'high' : rawPct >= 25 ? 'med' : 'low';
-    const levelText = rawPct >= 60 ? 'גבוה' : rawPct >= 25 ? 'בינוני' : 'נמוך';
-    const displayH = String(h).padStart(2,'0');
-    const nextH = String((h+1)%24).padStart(2,'0');
-    const cityTxt = cityFilter ? `ב<strong>${cityFilter}</strong>` : 'בכל הארץ';
-    const desc = `${cityTxt}, בין השעות <strong>${displayH}:00</strong> ל-<strong>${nextH}:00</strong>`;
-
-    return { rawPct, level, levelText, desc, alertsInHour, h };
-  }
-
-  function renderProb() {
-    const hour = document.getElementById('prob-hour').value;
-    const city = document.getElementById('prob-city').value.trim();
-    const { rawPct, level, levelText, desc, alertsInHour } = calcProb(hour, city);
-
-    const result = document.getElementById('prob-result');
-    result.innerHTML = `
-      <div class="prob-card ${level}" style="min-width:100%">
-        <div class="prob-glow"></div>
-        <div class="prob-card-lbl">סיכוי לאזעקה · רמת סיכון: ${levelText}</div>
-        <div class="prob-card-text">
-          ${desc}<br>
-          הסיכוי שתהיה אזעקה הוא:
-        </div>
-        <div class="prob-pct-wrap">
-          <div class="prob-pct">${rawPct}</div>
-          <div class="prob-pct-sym">%</div>
-        </div>
-        <div class="prob-bar-wrap">
-          <div class="prob-bar-fill" style="width:${rawPct}%"></div>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin-top:10px">
-          בוסס על ${alertsInHour} אזעקות בשעה זו מתוך 48 שעות הנתונים האחרונות
-        </div>
-      </div>`;
-  }
-
-  renderProb();
-  document.getElementById('prob-hour').onchange = renderProb;
-  document.getElementById('prob-city').oninput = renderProb;
-
-  // Chart
-  const chart = document.getElementById('chart');
-  [...chart.querySelectorAll('.col')].forEach(c=>c.remove());
-  hourCounts.forEach((n,h) => {
-    const pct = max>0?(n/max)*100:0;
-    const cls = n===max?'is-max':n===min?'is-min':'norm';
+  const maxC = Math.max(...counts, 1);
+  const tl = document.getElementById('tl');
+  [...tl.querySelectorAll('.tl-col')].forEach(c=>c.remove());
+  counts.forEach((c, i) => {
+    const pct = (c/maxC)*100;
     const col = document.createElement('div');
-    col.className='col';
-    col.title=`${hLabel(h)}: ${n} אזעקות`;
-    col.innerHTML=`
-      <div class="bar ${cls}" style="height:${Math.max(pct,1.5)}%;animation-delay:${h*0.022}s">
-        <span class="tip">${n}</span>
-      </div>
-      <span class="col-lbl">${String(h).padStart(2,'0')}</span>`;
-    chart.appendChild(col);
+    col.className = 'tl-col';
+    const ageH = Math.round((slots-i)*30/60);
+    col.innerHTML = `
+      <span class="tl-tip">${c} התרעות</span>
+      <div class="tl-bar${i<3?' hot':''}" style="height:${Math.max(pct,2)}%;animation-delay:${i*.008}s"></div>
+      ${i%8===0?`<span class="tl-lbl">${i===0?'עכשיו':ageH+'ש'}</span>`:''}`;
+    tl.appendChild(col);
   });
-
-  // Cities
-  const sortedCities = Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]);
-  const cityMax = sortedCities.length ? sortedCities[0][1] : 1;
-  let cityLimit=30, cityFilter='';
-
-  function renderCities() {
-    const grid = document.getElementById('city-grid');
-    const filtered = cityFilter ? sortedCities.filter(([n])=>n.includes(cityFilter)) : sortedCities;
-    grid.innerHTML='';
-    filtered.slice(0,cityLimit).forEach(([name,count],i) => {
-      const rank = sortedCities.findIndex(([n])=>n===name)+1;
-      const rankCls = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
-      const pct = Math.round((count/cityMax)*100);
-      const card = document.createElement('div');
-      card.className='city-card';
-      card.style.animationDelay=`${Math.min(i,20)*0.025}s`;
-      card.innerHTML=`
-        <div class="city-rank ${rankCls}">${rank}</div>
-        <div class="city-info">
-          <div class="city-name">${name}</div>
-          <div class="city-bar-wrap"><div class="city-bar-fill" style="width:${pct}%"></div></div>
-        </div>
-        <div>
-          <div class="city-count">${count}</div>
-          <div class="city-pct">${pct}%</div>
-        </div>`;
-      grid.appendChild(card);
-    });
-    const btn=document.getElementById('show-more');
-    if (!cityFilter && filtered.length>cityLimit) {
-      btn.style.display='block';
-      btn.textContent=`הצג עוד (${filtered.length-cityLimit} נוספים) ▼`;
-    } else { btn.style.display='none'; }
-  }
-  renderCities();
-  document.getElementById('show-more').onclick=()=>{cityLimit+=30;renderCities();};
-  document.getElementById('city-search').oninput=e=>{cityFilter=e.target.value.trim();cityLimit=30;renderCities();};
-
-  // Table
-  const sorted = hourCounts.map((n,h)=>({h,n})).sort((a,b)=>b.n-a.n);
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML='';
-  sorted.forEach(({h,n},i) => {
-    const pct = max>0?Math.round((n/max)*100):0;
-    const cls = n===max?'hi':n===min?'lo':'mid';
-    const color = n===max?'var(--coral)':n===min?'var(--teal)':'var(--accent)';
-    const tr = document.createElement('tr');
-    tr.innerHTML=`
-      <td data-label="דירוג" class="td-rank">${i+1}</td>
-      <td data-label="שעות">${hLabel(h)}</td>
-      <td data-label="אזעקות" class="td-n ${cls}">${n}</td>
-      <td data-label="יחסי">
-        <span class="bar-i" style="width:${Math.max(pct,1)}%;background:${color};opacity:.65"></span>
-        <span style="font-size:10px;color:var(--muted);margin-right:8px">${pct}%</span>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-  document.getElementById('footer').textContent =
-    `* הנתונים המוצגים מייצגים את 48 השעות האחרונות בלבד · עודכן: ${new Date().toLocaleString('he-IL')} · מקור: api.tzevaadom.co.il`;
-
-  document.getElementById('loading').style.display='none';
-  document.getElementById('content').style.display='block';
 }
 
-function showErr(msg) {
-  document.getElementById('loading').style.display='none';
-  document.getElementById('err').style.display='block';
-  document.getElementById('err').innerHTML=
-    `<div class="err-box"><div style="font-size:28px;margin-bottom:10px">⚠️</div>${msg}</div>`;
+function initCities() {
+  if (citiesInit) return;
+  citiesInit = true;
+  const dl = document.getElementById('city-dl');
+  Object.keys(cityCounts).sort((a,b)=>a.localeCompare(b,'he')).forEach(n => {
+    const o = document.createElement('option'); o.value=n; dl.appendChild(o);
+  });
 }
 
-async function run() {
+async function update() {
   try {
-    const pages = await fetchAll();
-    if (!pages.length) { showErr('לא נמצאו נתונים.'); return; }
-    render(analyze(pages));
+    allAlerts = await fetchAlerts();
+    cityCounts = {};
+    allAlerts.forEach(a => (a.cities||[]).forEach(c => { cityCounts[c]=(cityCounts[c]||0)+1; }));
+    initCities();
+
+    const oldest = Math.min(...allAlerts.map(a=>a.time));
+    const newest = Math.max(...allAlerts.map(a=>a.time));
+    const fmt = ts => new Date(ts*1000).toLocaleString('he-IL',{
+      timeZone:'Asia/Jerusalem',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'
+    });
+    document.getElementById('hdr-meta').textContent =
+      `נתונים: ${fmt(oldest)} – ${fmt(newest)} · ${allAlerts.length} התרעות`;
+
+    renderScore(calcScore(allAlerts, selCity, selDur));
+    renderTimeline(allAlerts);
+
+    document.getElementById('footer-t').textContent =
+      `עודכן: ${new Date().toLocaleString('he-IL')}`;
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app').style.display     = 'block';
   } catch(e) {
-    showErr(`שגיאה: ${e.message}`);
+    document.getElementById('loading').innerHTML =
+      `<div style="color:var(--danger);text-align:center;padding:20px;font-size:13px">שגיאה: ${e.message}<br><small style="color:var(--muted)">מנסה שוב בעוד 30 שניות</small></div>`;
   }
 }
 
-run();
-setInterval(run, REFRESH_MS);
+document.getElementById('pills').addEventListener('click', e => {
+  const p = e.target.closest('.pill'); if (!p) return;
+  document.querySelectorAll('.pill').forEach(x=>x.classList.remove('on'));
+  p.classList.add('on');
+  selDur = parseInt(p.dataset.min);
+  if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur));
+});
+
+document.getElementById('city-input').addEventListener('input', e => {
+  const v = e.target.value.trim();
+  selCity = Object.keys(cityCounts).includes(v) ? v : '';
+  document.getElementById('sc-city').textContent = selCity || 'כל הארץ';
+  if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur));
+});
+
+update();
+setInterval(update, REFRESH);
 </script>
 </body>
 </html>
