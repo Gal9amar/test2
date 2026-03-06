@@ -343,20 +343,24 @@ header {
   display: flex; gap: 10px;
 }
 .when-btn {
-  font-family: var(--sans);
-  font-size: 13px; font-weight: 600;
-  padding: 8px 20px;
-  border-radius: 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .5px;
+  padding: 6px 16px;
+  border-radius: 5px;
   border: 1px solid var(--line2);
   background: transparent;
   color: var(--fg2);
   cursor: pointer;
-  transition: all .2s;
+  transition: all .15s ease;
+  user-select: none;
 }
+.when-btn:hover { border-color: rgba(255,255,255,0.25); color: var(--fg); }
 .when-btn.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #000;
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.3);
+  color: var(--fg);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 }
 .when-time-wrap {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
