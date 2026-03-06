@@ -323,7 +323,7 @@ function render({ alerts, hourCounts, cityCounts, minTs, maxTs, eventCount }) {
   // Populate city selector (first run only)
   const citySel = document.getElementById('prob-city');
   if (citySel.options.length === 1) {
-    const topCities = Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]).slice(0, 60);
+    const topCities = Object.entries(cityCounts).sort((a,b)=>a[0].localeCompare(b[0],'he')).slice(0, 60);
     topCities.forEach(([name]) => {
       const opt = document.createElement('option');
       opt.value = name;
