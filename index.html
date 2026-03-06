@@ -2,113 +2,163 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>סטטיסטיקת אזעקות | צבע אדום</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>סטטיסטיקת אזעקות 48 שעות | צבע אדום</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700&family=Rubik:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#08090d; --surface:#0f1117; --surface2:#161a24; --border:#1e2433;
-  --red:#e63946; --red-dim:rgba(230,57,70,0.12);
-  --green:#2ecc71; --green-dim:rgba(46,204,113,0.1);
-  --blue:#4cc9f0; --text:#eef0f6; --muted:#5a607a;
+  --bg:        #0e1117;
+  --surface:   #161b27;
+  --surface2:  #1c2333;
+  --border:    #252e42;
+  --accent:    #5b8dee;
+  --accent-dim:rgba(91,141,238,0.12);
+  --coral:     #e07b6a;
+  --coral-dim: rgba(224,123,106,0.12);
+  --teal:      #4db8a4;
+  --teal-dim:  rgba(77,184,164,0.12);
+  --text:      #d8deeb;
+  --text2:     #8a93a8;
+  --muted:     #4e5770;
+  --radius:    14px;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl;}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl;-webkit-font-smoothing:antialiased;}
 
-header{padding:32px 40px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
-header h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,4vw,48px);letter-spacing:2px;line-height:1;}
-header h1 span{color:var(--red);}
-header p{font-size:13px;color:var(--muted);margin-top:5px;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 10%,rgba(91,141,238,0.05) 0%,transparent 70%),radial-gradient(ellipse 40% 30% at 80% 80%,rgba(77,184,164,0.04) 0%,transparent 70%);pointer-events:none;z-index:0;}
 
-.live-pill{display:flex;align-items:center;gap:8px;background:var(--red-dim);border:1px solid rgba(230,57,70,.4);border-radius:999px;padding:6px 16px;font-size:12px;font-weight:700;color:var(--red);letter-spacing:1.5px;}
-.live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink 1.2s ease-in-out infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+/* Header */
+header{position:relative;z-index:1;padding:28px 32px 24px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.header-left h1{font-family:'Rubik',sans-serif;font-size:clamp(22px,4vw,36px);font-weight:700;line-height:1.1;}
+.header-left h1 em{font-style:normal;color:var(--accent);}
+.header-left .sub{font-size:12px;color:var(--text2);margin-top:5px;line-height:1.5;}
+.notice-48h{display:inline-flex;align-items:center;gap:6px;background:var(--accent-dim);border:1px solid rgba(91,141,238,.3);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--accent);margin-top:8px;}
+.live-pill{display:flex;align-items:center;gap:7px;background:rgba(77,184,164,.1);border:1px solid rgba(77,184,164,.3);border-radius:999px;padding:7px 16px;font-size:11px;font-weight:600;color:var(--teal);letter-spacing:.8px;white-space:nowrap;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal);animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 
-.stats-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));border-bottom:1px solid var(--border);}
-.stat{padding:20px 28px;border-left:1px solid var(--border);position:relative;}
+/* Stats strip */
+.stats-strip{position:relative;z-index:1;display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
+.stat{padding:18px 24px;border-left:1px solid var(--border);transition:background .2s;}
 .stat:last-child{border-left:none;}
-.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent);}
-.stat-n{font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--red);line-height:1;}
-.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px;}
+.stat:hover{background:var(--surface);}
+.stat-n{font-family:'Rubik',sans-serif;font-size:30px;font-weight:700;color:var(--accent);line-height:1;}
+.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px;}
 
-.main{max-width:1400px;margin:0 auto;padding:32px 40px;}
+/* Main */
+.main{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:28px 32px;}
 
-.stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:12px;}
+.stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
 .stitle::after{content:'';flex:1;height:1px;background:var(--border);}
 
-.highlights{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px;}
-.hl{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 26px;animation:fadeUp .5s ease both;}
-.hl.danger{border-color:rgba(230,57,70,.3);background:linear-gradient(135deg,var(--surface) 50%,var(--red-dim));}
-.hl.safe{border-color:rgba(46,204,113,.3);background:linear-gradient(135deg,var(--surface) 50%,var(--green-dim));}
-.hl-icon{font-size:28px;margin-bottom:10px;display:block;}
-.hl-lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:6px;}
-.hl-val{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;}
-.hl.danger .hl-val{color:var(--red);}
-.hl.safe .hl-val{color:var(--green);}
-.hl-sub{font-size:12px;color:var(--muted);margin-top:5px;}
+/* Highlights */
+.highlights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px;}
+.hl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;animation:fadeUp .5s ease both;}
+.hl:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.hl::after{content:'';position:absolute;inset:0;border-radius:var(--radius);opacity:0;transition:opacity .3s;pointer-events:none;}
+.hl.peak{border-color:rgba(224,123,106,.25);}
+.hl.peak::after{background:linear-gradient(135deg,transparent 60%,var(--coral-dim));}
+.hl.quiet{border-color:rgba(77,184,164,.25);}
+.hl.quiet::after{background:linear-gradient(135deg,transparent 60%,var(--teal-dim));}
+.hl:hover::after{opacity:1;}
+.hl-icon{font-size:22px;margin-bottom:8px;display:block;}
+.hl-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:5px;}
+.hl-val{font-family:'Rubik',sans-serif;font-size:30px;font-weight:700;line-height:1;}
+.hl.peak  .hl-val{color:var(--coral);}
+.hl.quiet .hl-val{color:var(--teal);}
+.hl-sub{font-size:12px;color:var(--text2);margin-top:5px;}
 
-.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px;overflow-x:auto;}
-.chart{display:flex;align-items:flex-end;gap:5px;height:200px;padding-bottom:28px;position:relative;min-width:580px;}
-.chart::before{content:'';position:absolute;inset:0 0 28px 0;background:repeating-linear-gradient(to bottom,transparent,transparent calc(25% - 1px),var(--border) 25%,transparent calc(25% + 1px));pointer-events:none;}
+/* Chart */
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 20px 0;margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.chart{display:flex;align-items:flex-end;gap:4px;height:180px;padding-bottom:28px;position:relative;min-width:520px;}
+.chart-lines{position:absolute;inset:0 0 28px 0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;}
+.chart-line{width:100%;height:1px;background:var(--border);opacity:.6;}
 .col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;cursor:pointer;position:relative;}
-.col:hover .bar{filter:brightness(1.35);}
-.col:hover .tip{opacity:1;transform:translateY(0);}
-.bar{width:100%;max-width:32px;border-radius:4px 4px 0 0;transition:all .35s ease;animation:grow .5s cubic-bezier(.34,1.56,.64,1) both;}
+.col:hover .bar{filter:brightness(1.25);}
+.col:hover .tip{opacity:1;transform:translateY(-2px);}
+.bar{width:100%;max-width:28px;border-radius:5px 5px 0 0;transition:filter .2s;animation:grow .55s cubic-bezier(.34,1.56,.64,1) both;}
 @keyframes grow{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
-.bar.is-max{background:linear-gradient(180deg,#e63946,rgba(230,57,70,.3));}
-.bar.is-min{background:linear-gradient(180deg,#2ecc71,rgba(46,204,113,.3));}
-.bar.norm{background:linear-gradient(180deg,#4361ee,rgba(67,97,238,.3));}
-.tip{position:absolute;top:-24px;font-size:10px;font-weight:700;color:var(--text);opacity:0;transform:translateY(4px);transition:all .2s;white-space:nowrap;pointer-events:none;}
-.col-lbl{position:absolute;bottom:0;font-size:9px;color:var(--muted);}
+.bar.is-max{background:linear-gradient(180deg,var(--coral),rgba(224,123,106,.2));}
+.bar.is-min{background:linear-gradient(180deg,var(--teal),rgba(77,184,164,.2));}
+.bar.norm{background:linear-gradient(180deg,var(--accent),rgba(91,141,238,.2));}
+.tip{position:absolute;top:-26px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:10px;font-weight:600;color:var(--text);opacity:0;transform:translateY(2px);transition:all .15s;white-space:nowrap;pointer-events:none;}
+.col-lbl{position:absolute;bottom:6px;font-size:9px;color:var(--muted);}
 
-.table-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+/* City */
+.city-search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 16px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;direction:rtl;outline:none;transition:border-color .2s,box-shadow .2s;margin-bottom:16px;display:block;}
+.city-search:focus{border-color:rgba(91,141,238,.5);box-shadow:0 0 0 3px rgba(91,141,238,.08);}
+.city-search::placeholder{color:var(--muted);}
+.city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:14px;}
+.city-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:12px;transition:border-color .2s,transform .2s,box-shadow .2s;animation:fadeUp .4s ease both;}
+.city-card:hover{border-color:rgba(91,141,238,.3);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.city-rank{font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;color:var(--muted);min-width:26px;text-align:center;}
+.city-rank.gold{color:#e6b84a;}.city-rank.silver{color:#9faab8;}.city-rank.bronze{color:#b07a4e;}
+.city-info{flex:1;min-width:0;}
+.city-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.city-bar-wrap{height:3px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden;}
+.city-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--teal));transition:width .7s cubic-bezier(.34,1.56,.64,1);}
+.city-count{font-family:'Rubik',sans-serif;font-size:22px;font-weight:700;color:var(--accent);line-height:1;text-align:center;}
+.city-pct{font-size:10px;color:var(--muted);text-align:center;margin-top:1px;}
+.show-more{display:block;width:100%;padding:11px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text2);font-family:'Heebo',sans-serif;font-size:13px;cursor:pointer;text-align:center;margin-bottom:28px;transition:all .2s;}
+.show-more:hover{background:var(--surface2);color:var(--text);border-color:rgba(91,141,238,.3);}
+
+/* Table */
+.table-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;}
 table{width:100%;border-collapse:collapse;}
 thead{background:var(--surface2);border-bottom:1px solid var(--border);}
-th{padding:12px 18px;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:600;text-align:right;}
-td{padding:11px 18px;font-size:13px;border-bottom:1px solid var(--border);}
+th{padding:11px 16px;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);font-weight:600;text-align:right;}
+td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--border);transition:background .15s;}
 tr:last-child td{border-bottom:none;}
 tr:hover td{background:var(--surface2);}
-.td-rank{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--muted);}
-.td-n{font-family:'Bebas Neue',sans-serif;font-size:20px;}
-.td-n.hi{color:var(--red);}.td-n.lo{color:var(--green);}.td-n.mid{color:var(--blue);}
-.bar-i{height:5px;border-radius:3px;display:inline-block;vertical-align:middle;}
+.td-rank{font-family:'Rubik',sans-serif;font-size:15px;font-weight:600;color:var(--muted);}
+.td-n{font-family:'Rubik',sans-serif;font-size:18px;font-weight:700;}
+.td-n.hi{color:var(--coral);}.td-n.lo{color:var(--teal);}.td-n.mid{color:var(--accent);}
+.bar-i{height:4px;border-radius:2px;display:inline-block;vertical-align:middle;}
 
-.city-search-wrap{position:relative;margin-bottom:16px;}
-.city-search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;direction:rtl;outline:none;transition:border-color .2s;}
-.city-search:focus{border-color:rgba(76,201,240,.5);}
-.city-search::placeholder{color:var(--muted);}
-.city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:16px;}
-.city-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;transition:border-color .2s,background .2s;animation:fadeUp .4s ease both;}
-.city-card:hover{border-color:rgba(230,57,70,.35);background:var(--surface2);}
-.city-rank{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted);min-width:28px;text-align:center;}
-.city-rank.gold{color:#ffd700;}.city-rank.silver{color:#c0c0c0;}.city-rank.bronze{color:#cd7f32;}
-.city-info{flex:1;min-width:0;}
-.city-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.city-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin-top:6px;}
-.city-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--red),var(--orange));transition:width .6s cubic-bezier(.34,1.56,.64,1);}
-.city-count{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--red);line-height:1;}
-.city-pct{font-size:10px;color:var(--muted);}
-.show-more{display:block;width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Heebo',sans-serif;font-size:13px;cursor:pointer;text-align:center;margin-bottom:32px;transition:all .2s;}
-.show-more:hover{background:var(--surface2);color:var(--text);border-color:rgba(76,201,240,.4);}
-
-.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:14px;color:var(--muted);}
-.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;}
+/* Loading / error */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:260px;gap:14px;color:var(--muted);position:relative;z-index:1;}
+.spinner{width:34px;height:34px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.err-box{background:var(--red-dim);border:1px solid rgba(230,57,70,.3);border-radius:12px;padding:28px;text-align:center;color:var(--red);font-size:13px;line-height:1.8;}
-.footer-note{font-size:11px;color:var(--muted);text-align:left;}
+.err-box{background:var(--coral-dim);border:1px solid rgba(224,123,106,.3);border-radius:var(--radius);padding:28px;text-align:center;color:var(--coral);font-size:13px;line-height:1.8;}
+.footer-note{font-size:11px;color:var(--muted);text-align:left;padding-bottom:32px;line-height:1.6;}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:680px){header{padding:20px;}.main{padding:16px;}.highlights{grid-template-columns:1fr;}.stats-strip{grid-template-columns:repeat(2,1fr);}.city-grid{grid-template-columns:1fr;}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Mobile */
+@media(max-width:600px){
+  header{padding:18px 16px 14px;}
+  .main{padding:16px;}
+  .stats-strip{grid-template-columns:repeat(2,1fr);}
+  .stat{padding:12px 16px;}
+  .stat-n{font-size:26px;}
+  .highlights{grid-template-columns:1fr;}
+  .hl{padding:16px 18px;}
+  .hl-val{font-size:26px;}
+  .city-grid{grid-template-columns:1fr;}
+  .chart-box{padding:12px 12px 0;}
+  thead{display:none;}
+  tr{display:block;border-bottom:1px solid var(--border);}
+  tr:last-child{border-bottom:none;}
+  td{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-bottom:none;}
+  td::before{content:attr(data-label);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  td:first-child{padding-top:14px;}
+  td:last-child{padding-bottom:14px;}
+}
+@media(max-width:400px){
+  header h1{font-size:19px;}
+  .stat-n{font-size:22px;}
+}
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <h1>אזעקות <span>לפי שעות</span></h1>
-    <p id="hdr-sub">מתחבר ל-API של צבע אדום...</p>
+  <div class="header-left">
+    <h1>סטטיסטיקת <em>אזעקות</em></h1>
+    <div class="sub" id="hdr-sub">מתחבר לשרת...</div>
+    <div class="notice-48h">🕐 הנתונים המוצגים מייצגים את <strong>48 השעות האחרונות</strong> בלבד</div>
   </div>
-  <div class="live-pill"><span class="live-dot"></span>LIVE · מתעדכן כל 60 שניות</div>
+  <div class="live-pill"><span class="live-dot"></span>עדכון חי · כל 60 שניות</div>
 </header>
 
 <div class="stats-strip" id="strip" style="display:none">
@@ -121,45 +171,52 @@ tr:hover td{background:var(--surface2);}
 <div class="main">
   <div id="loading" class="loading">
     <div class="spinner"></div>
-    <div>טוען נתונים מ-api.tzevaadom.co.il...</div>
+    <div>טוען נתונים...</div>
   </div>
 
   <div id="content" style="display:none">
-    <div class="stitle">תובנות</div>
+
+    <div class="stitle">תובנות · 48 שעות אחרונות</div>
     <div class="highlights">
-      <div class="hl danger">
-        <span class="hl-icon">🚨</span>
-        <div class="hl-lbl">הכי הרבה אזעקות בין השעות</div>
+      <div class="hl peak">
+        <span class="hl-icon">🔺</span>
+        <div class="hl-lbl">שעת השיא — הכי הרבה אזעקות</div>
         <div class="hl-val" id="h-max">—</div>
         <div class="hl-sub" id="h-max-n"></div>
       </div>
-      <div class="hl safe">
-        <span class="hl-icon">😌</span>
-        <div class="hl-lbl">הכי פחות אזעקות בין השעות</div>
+      <div class="hl quiet">
+        <span class="hl-icon">🔹</span>
+        <div class="hl-lbl">שעת השקט — הכי פחות אזעקות</div>
         <div class="hl-val" id="h-min">—</div>
         <div class="hl-sub" id="h-min-n"></div>
       </div>
     </div>
 
-    <div class="stitle">גרף שעתי — ישראל (UTC+2/+3)</div>
+    <div class="stitle">גרף לפי שעות — שעון ישראל</div>
     <div class="chart-box">
-      <div class="chart" id="chart"></div>
+      <div class="chart" id="chart">
+        <div class="chart-lines">
+          <div class="chart-line"></div>
+          <div class="chart-line"></div>
+          <div class="chart-line"></div>
+          <div class="chart-line"></div>
+        </div>
+      </div>
     </div>
 
-    <div class="stitle">סטטיסטיקת ישובים — ממוינת מהגבוה לנמוך</div>
-    <div class="city-search-wrap">
-      <input class="city-search" id="city-search" type="text" placeholder="🔍 חיפוש ישוב...">
-    </div>
+    <div class="stitle">סטטיסטיקת ישובים — ממוין מגבוה לנמוך</div>
+    <input class="city-search" id="city-search" type="text" placeholder="🔍 חיפוש ישוב...">
     <div class="city-grid" id="city-grid"></div>
-    <button class="show-more" id="show-more" style="display:none">הצג עוד ישובים ▼</button>
+    <button class="show-more" id="show-more" style="display:none">הצג עוד ▼</button>
 
-    <div class="stitle">טבלה לפי שעות — ממוינת מהגבוה לנמוך</div>
+    <div class="stitle">טבלת שעות מלאה — ממוין מגבוה לנמוך</div>
     <div class="table-box">
       <table>
-        <thead><tr><th>#</th><th>טווח שעות</th><th>אזעקות</th><th>אחוז מהשיא</th></tr></thead>
+        <thead><tr><th>#</th><th>טווח שעות</th><th>אזעקות</th><th>יחסי לשיא</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
     </div>
+
     <div class="footer-note" id="footer"></div>
   </div>
 
@@ -167,80 +224,65 @@ tr:hover td{background:var(--surface2);}
 </div>
 
 <script>
-const PROXY        = 'https://api.codetabs.com/v1/proxy/?quest=';
-const HISTORY_URL  = 'https://api.tzevaadom.co.il/alerts-history/';
-const LIVE_URL     = 'https://api.tzevaadom.co.il/notifications';
-const START_TS     = Date.UTC(2026, 1, 28) / 1000; // 28 Feb 2026 UTC
-const REFRESH_MS   = 60_000;
+const PROXY       = 'https://api.codetabs.com/v1/proxy/?quest=';
+const HISTORY_URL = 'https://api.tzevaadom.co.il/alerts-history/';
+const LIVE_URL    = 'https://api.tzevaadom.co.il/notifications';
+const REFRESH_MS  = 60_000;
 
 function ilHour(ts) {
-  const d = new Date(ts * 1000);
-  return parseInt(d.toLocaleString('en-US', { timeZone:'Asia/Jerusalem', hour:'numeric', hour12:false }), 10);
+  return parseInt(new Date(ts*1000).toLocaleString('en-US',
+    { timeZone:'Asia/Jerusalem', hour:'numeric', hour12:false }), 10);
 }
-
 function hLabel(h) {
   return `${String(h).padStart(2,'0')}:00 – ${String((h+1)%24).padStart(2,'0')}:00`;
 }
-
-async function proxyFetch(url) {
+async function pFetch(url) {
   const r = await fetch(PROXY + encodeURIComponent(url));
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
 }
-
 async function fetchAll() {
-  const allPages = [];
-  for (let offset = 0; offset < 1000; offset += 50) {
-    const page = await proxyFetch(`${HISTORY_URL}?offset=${offset}`);
+  const pages = [];
+  for (let offset = 0; offset < 200; offset += 50) {
+    const page = await pFetch(`${HISTORY_URL}?offset=${offset}`);
     if (!page || page.length === 0) break;
-    allPages.push(...page);
+    pages.push(...page);
     if (page.length < 50) break;
-    const oldest = Math.min(...page.flatMap(e => e.alerts.map(a => a.time)));
-    if (oldest < START_TS) break;
   }
-
-  // Merge live notifications
   try {
-    const live = await proxyFetch(LIVE_URL);
-    if (live && live.length) allPages.unshift({ id:'live', alerts: live });
+    const live = await pFetch(LIVE_URL);
+    if (live && live.length) pages.unshift({ id:'live', alerts:live });
   } catch {}
-
-  return allPages;
+  return pages;
 }
 
 function analyze(pages) {
-  const alerts = pages.flatMap(e =>
-    (e.alerts || []).filter(a => a.time >= START_TS && !a.isDrill)
-  );
-
+  const alerts = pages.flatMap(e => (e.alerts||[]).filter(a => !a.isDrill));
   const hourCounts = new Array(24).fill(0);
   const cityCounts = {};
   alerts.forEach(a => {
     hourCounts[ilHour(a.time)]++;
-    (a.cities || []).forEach(c => { cityCounts[c] = (cityCounts[c] || 0) + 1; });
+    (a.cities||[]).forEach(c => { cityCounts[c]=(cityCounts[c]||0)+1; });
   });
-
-  const times = alerts.map(a => a.time);
-  return {
-    alerts, hourCounts, cityCounts,
+  const times = alerts.map(a=>a.time);
+  return { alerts, hourCounts, cityCounts,
+    minTs: times.length ? Math.min(...times) : Date.now()/1000,
     maxTs: times.length ? Math.max(...times) : Date.now()/1000,
-    eventCount: pages.length
-  };
+    eventCount: pages.length };
 }
 
-function render({ alerts, hourCounts, cityCounts, maxTs, eventCount }) {
+function render({ alerts, hourCounts, cityCounts, minTs, maxTs, eventCount }) {
   const max = Math.max(...hourCounts);
   const min = Math.min(...hourCounts);
   const maxH = hourCounts.indexOf(max);
   const minH = hourCounts.indexOf(min);
   const total = alerts.length;
 
-  const fmtDate = ts => new Date(ts*1000).toLocaleDateString('he-IL',
-    { timeZone:'Asia/Jerusalem', day:'2-digit', month:'2-digit', year:'numeric' });
+  const fmtDT = ts => new Date(ts*1000).toLocaleString('he-IL',
+    { timeZone:'Asia/Jerusalem', day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' });
 
   document.getElementById('hdr-sub').textContent =
-    `נתונים מ-28/02/2026 עד ${fmtDate(maxTs)} | מקור: api.tzevaadom.co.il`;
-
+    `${fmtDT(minTs)} עד ${fmtDT(maxTs)} | מקור: tzevaadom.co.il`;
   document.getElementById('s-total').textContent  = total.toLocaleString('he');
   document.getElementById('s-events').textContent = eventCount.toLocaleString('he');
   document.getElementById('s-cities').textContent = Object.keys(cityCounts).length.toLocaleString('he');
@@ -249,114 +291,97 @@ function render({ alerts, hourCounts, cityCounts, maxTs, eventCount }) {
   document.getElementById('strip').style.display = 'grid';
 
   document.getElementById('h-max').textContent   = `${String(maxH).padStart(2,'0')}:00`;
-  document.getElementById('h-max-n').textContent = `${max} אזעקות | ${hLabel(maxH)}`;
+  document.getElementById('h-max-n').textContent = `${max} אזעקות · ${hLabel(maxH)}`;
   document.getElementById('h-min').textContent   = `${String(minH).padStart(2,'0')}:00`;
-  document.getElementById('h-min-n').textContent = `${min} אזעקות | ${hLabel(minH)}`;
+  document.getElementById('h-min-n').textContent = `${min} אזעקות · ${hLabel(minH)}`;
 
   // Chart
   const chart = document.getElementById('chart');
-  chart.innerHTML = '';
-  hourCounts.forEach((n, h) => {
-    const pct = max > 0 ? (n / max) * 100 : 0;
-    const cls = n === max ? 'is-max' : n === min ? 'is-min' : 'norm';
+  [...chart.querySelectorAll('.col')].forEach(c=>c.remove());
+  hourCounts.forEach((n,h) => {
+    const pct = max>0?(n/max)*100:0;
+    const cls = n===max?'is-max':n===min?'is-min':'norm';
     const col = document.createElement('div');
-    col.className = 'col';
-    col.title = `${hLabel(h)}: ${n} אזעקות`;
-    col.innerHTML = `
-      <div class="bar ${cls}" style="height:${Math.max(pct,1.5)}%;animation-delay:${h*0.025}s">
+    col.className='col';
+    col.title=`${hLabel(h)}: ${n} אזעקות`;
+    col.innerHTML=`
+      <div class="bar ${cls}" style="height:${Math.max(pct,1.5)}%;animation-delay:${h*0.022}s">
         <span class="tip">${n}</span>
       </div>
       <span class="col-lbl">${String(h).padStart(2,'0')}</span>`;
     chart.appendChild(col);
   });
 
-  // Table
-  const sorted = hourCounts.map((n,h)=>({h,n})).sort((a,b)=>b.n-a.n);
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
-  sorted.forEach(({h,n},i) => {
-    const pct = max > 0 ? Math.round((n/max)*100) : 0;
-    const cls = n===max?'hi':n===min?'lo':'mid';
-    const color = n===max?'#e63946':n===min?'#2ecc71':'#4361ee';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="td-rank">${i+1}</td>
-      <td>${hLabel(h)}</td>
-      <td class="td-n ${cls}">${n}</td>
-      <td>
-        <span class="bar-i" style="width:${Math.max(pct,1)}%;background:${color};opacity:.7"></span>
-        <span style="font-size:10px;color:var(--muted);margin-right:6px">${pct}%</span>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-
-
-  // ── City statistics ──
+  // Cities
   const sortedCities = Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]);
   const cityMax = sortedCities.length ? sortedCities[0][1] : 1;
-  let cityLimit = 30;
-  let cityFilter = '';
+  let cityLimit=30, cityFilter='';
 
   function renderCities() {
     const grid = document.getElementById('city-grid');
-    const filtered = cityFilter
-      ? sortedCities.filter(([name]) => name.includes(cityFilter))
-      : sortedCities;
-    const visible = filtered.slice(0, cityLimit);
-    grid.innerHTML = '';
-    visible.forEach(([name, count], i) => {
-      const rank = i + 1;
+    const filtered = cityFilter ? sortedCities.filter(([n])=>n.includes(cityFilter)) : sortedCities;
+    grid.innerHTML='';
+    filtered.slice(0,cityLimit).forEach(([name,count],i) => {
+      const rank = sortedCities.findIndex(([n])=>n===name)+1;
       const rankCls = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
-      const pct = Math.round((count / cityMax) * 100);
+      const pct = Math.round((count/cityMax)*100);
       const card = document.createElement('div');
-      card.className = 'city-card';
-      card.style.animationDelay = `${Math.min(i,20)*0.03}s`;
-      card.innerHTML = `
+      card.className='city-card';
+      card.style.animationDelay=`${Math.min(i,20)*0.025}s`;
+      card.innerHTML=`
         <div class="city-rank ${rankCls}">${rank}</div>
         <div class="city-info">
           <div class="city-name">${name}</div>
           <div class="city-bar-wrap"><div class="city-bar-fill" style="width:${pct}%"></div></div>
         </div>
-        <div style="text-align:center">
+        <div>
           <div class="city-count">${count}</div>
           <div class="city-pct">${pct}%</div>
         </div>`;
       grid.appendChild(card);
     });
-    const btn = document.getElementById('show-more');
-    if (!cityFilter && filtered.length > cityLimit) {
-      btn.style.display = 'block';
-      btn.textContent = `הצג עוד (${filtered.length - cityLimit} נוספים) ▼`;
-    } else {
-      btn.style.display = 'none';
-    }
+    const btn=document.getElementById('show-more');
+    if (!cityFilter && filtered.length>cityLimit) {
+      btn.style.display='block';
+      btn.textContent=`הצג עוד (${filtered.length-cityLimit} נוספים) ▼`;
+    } else { btn.style.display='none'; }
   }
-
   renderCities();
+  document.getElementById('show-more').onclick=()=>{cityLimit+=30;renderCities();};
+  document.getElementById('city-search').oninput=e=>{cityFilter=e.target.value.trim();cityLimit=30;renderCities();};
 
-  document.getElementById('show-more').onclick = () => {
-    cityLimit += 30;
-    renderCities();
-  };
-
-  document.getElementById('city-search').oninput = e => {
-    cityFilter = e.target.value.trim();
-    cityLimit = 30;
-    renderCities();
-  };
+  // Table
+  const sorted = hourCounts.map((n,h)=>({h,n})).sort((a,b)=>b.n-a.n);
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML='';
+  sorted.forEach(({h,n},i) => {
+    const pct = max>0?Math.round((n/max)*100):0;
+    const cls = n===max?'hi':n===min?'lo':'mid';
+    const color = n===max?'var(--coral)':n===min?'var(--teal)':'var(--accent)';
+    const tr = document.createElement('tr');
+    tr.innerHTML=`
+      <td data-label="דירוג" class="td-rank">${i+1}</td>
+      <td data-label="שעות">${hLabel(h)}</td>
+      <td data-label="אזעקות" class="td-n ${cls}">${n}</td>
+      <td data-label="יחסי">
+        <span class="bar-i" style="width:${Math.max(pct,1)}%;background:${color};opacity:.65"></span>
+        <span style="font-size:10px;color:var(--muted);margin-right:8px">${pct}%</span>
+      </td>`;
+    tbody.appendChild(tr);
+  });
 
   document.getElementById('footer').textContent =
-    `עודכן: ${new Date().toLocaleString('he-IL')} | נתונים: api.tzevaadom.co.il`;
+    `* הנתונים המוצגים מייצגים את 48 השעות האחרונות בלבד · עודכן: ${new Date().toLocaleString('he-IL')} · מקור: api.tzevaadom.co.il`;
 
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('content').style.display = 'block';
+  document.getElementById('loading').style.display='none';
+  document.getElementById('content').style.display='block';
 }
 
 function showErr(msg) {
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('err').style.display = 'block';
-  document.getElementById('err').innerHTML =
-    `<div class="err-box"><div style="font-size:32px;margin-bottom:10px">⚠️</div>${msg}</div>`;
+  document.getElementById('loading').style.display='none';
+  document.getElementById('err').style.display='block';
+  document.getElementById('err').innerHTML=
+    `<div class="err-box"><div style="font-size:28px;margin-bottom:10px">⚠️</div>${msg}</div>`;
 }
 
 async function run() {
@@ -365,7 +390,7 @@ async function run() {
     if (!pages.length) { showErr('לא נמצאו נתונים.'); return; }
     render(analyze(pages));
   } catch(e) {
-    showErr(`שגיאה בטעינת הנתונים: ${e.message}`);
+    showErr(`שגיאה: ${e.message}`);
   }
 }
 
