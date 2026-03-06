@@ -375,6 +375,18 @@ header {
   width: 140px;
 }
 .when-time-input:focus { border-color: var(--accent); }
+.when-history-note {
+  font-size: 12px;
+  color: var(--fg2);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--line2);
+  border-radius: 8px;
+  padding: 8px 14px;
+  max-width: 320px;
+  text-align: center;
+  line-height: 1.6;
+  margin-top: 2px;
+}
 .when-time-hint {
   font-family: var(--mono);
   font-size: 11px; color: var(--fg2);
@@ -747,6 +759,7 @@ footer {
       <div class="when-time-wrap" id="when-time-wrap" style="display:none">
         <input type="time" id="when-time-input" class="when-time-input"/>
         <div class="when-time-hint" id="when-time-hint"></div>
+        <div class="when-history-note" id="when-history-note"></div>
       </div>
     </div>
   </div>
@@ -1226,7 +1239,7 @@ function applyTimeInput(val, hint) {
   const now = new Date();
   const target = new Date();
   target.setHours(h, m, 0, 0);
-  if (target <= now) target.setDate(target.getDate() + 1); // next occurrence
+  if (target <= now) target.setDate(target.getDate() + 1);
   selStartOffset = (target - now) / 1000;
   const diffMin = Math.round(selStartOffset / 60);
   const diffH   = Math.floor(diffMin / 60);
@@ -1234,6 +1247,28 @@ function applyTimeInput(val, hint) {
   hint.textContent = diffH > 0
     ? `בעוד ${diffH} שעות${diffM > 0 ? ` ו-${diffM} דקות` : ''}`
     : `בעוד ${diffM} דקות`;
+
+  // Historical note: count alerts in same ±1h window from past days
+  const noteEl = document.getElementById('when-history-note');
+  if (noteEl && allAlerts.length) {
+    const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
+    const window = src.filter(a => {
+      const ah = new Date(a.time * 1000).getHours();
+      return Math.abs(ah - h) <= 1;
+    });
+    const days = new Set(window.map(a => {
+      const d = new Date(a.time * 1000);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    })).size;
+    const total = window.length;
+    const cityCtx = selCity ? `ב${selCity}` : 'בכל הארץ';
+    if (total === 0) {
+      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 לא נרשמו התרעות ${cityCtx} ב-48 השעות האחרונות`;
+    } else {
+      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 נרשמו ${total} התרעות ${cityCtx} ב-${days} יום${days !== 1 ? 'ים' : ''} האחרונים`;
+    }
+  }
+
   if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur, selStartOffset));
 }
 
