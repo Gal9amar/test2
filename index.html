@@ -1032,8 +1032,15 @@ async function update() {
     renderScore(calcScore(allAlerts, selCity, selDur));
     renderTimeline(allAlerts);
 
+    const isFirstLoad = document.getElementById('app').style.display === 'none';
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display     = 'block';
+
+    // initGauge needs visible DOM for getTotalLength() — run once after first show
+    if (isFirstLoad) {
+      initGauge();
+      renderScore(calcScore(allAlerts, selCity, selDur));
+    }
   } catch(e) {
     document.getElementById('loading').innerHTML =
       `<div style="color:var(--danger);text-align:center;padding:20px;font-family:var(--mono);font-size:12px;letter-spacing:1px">ERR: ${e.message}<br><br><span style="color:var(--fg3)">RETRY IN 30S_</span></div>`;
@@ -1084,7 +1091,6 @@ document.getElementById('city-input').addEventListener('input', e => {
 });
 
 update();
-initGauge();
 setInterval(update, REFRESH);
 </script>
 </body>
