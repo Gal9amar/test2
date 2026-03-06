@@ -1006,7 +1006,7 @@ function renderScore(d) {
   document.getElementById('st-since-l').innerHTML = `זמן שעבר מהאזעקה<br>האחרונה · ${ctx}`;
   document.getElementById('st-24h-l').innerHTML   = `התרעות ב-24 שעות<br>${ctx}`;
 
-  // Last alert card — always from full allAlerts (not city-filtered)
+  // Last alert card — filtered by city if selected, otherwise all national alerts
   const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
   const last = src.length ? src.reduce((a,b) => a.time > b.time ? a : b) : null;
   if (last) {
