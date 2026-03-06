@@ -3,685 +3,291 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>סטטיסטיקת אזעקות לפי שעות | פיקוד העורף</title>
+<title>סטטיסטיקת אזעקות | צבע אדום</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #08090d;
-    --surface: #0f1117;
-    --surface2: #161a24;
-    --border: #1e2433;
-    --red: #e63946;
-    --red-dim: rgba(230,57,70,0.15);
-    --orange: #ff8c42;
-    --green: #2ecc71;
-    --green-dim: rgba(46,204,113,0.12);
-    --text: #eef0f6;
-    --muted: #5a607a;
-    --accent: #4cc9f0;
-  }
+:root {
+  --bg:#08090d; --surface:#0f1117; --surface2:#161a24; --border:#1e2433;
+  --red:#e63946; --red-dim:rgba(230,57,70,0.12);
+  --green:#2ecc71; --green-dim:rgba(46,204,113,0.1);
+  --blue:#4cc9f0; --text:#eef0f6; --muted:#5a607a;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl;}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+header{padding:32px 40px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(28px,4vw,48px);letter-spacing:2px;line-height:1;}
+header h1 span{color:var(--red);}
+header p{font-size:13px;color:var(--muted);margin-top:5px;}
 
-  body {
-    font-family: 'Heebo', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    direction: rtl;
-    overflow-x: hidden;
-  }
+.live-pill{display:flex;align-items:center;gap:8px;background:var(--red-dim);border:1px solid rgba(230,57,70,.4);border-radius:999px;padding:6px 16px;font-size:12px;font-weight:700;color:var(--red);letter-spacing:1.5px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:blink 1.2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
 
-  /* Noise texture overlay */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-  }
+.stats-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));border-bottom:1px solid var(--border);}
+.stat{padding:20px 28px;border-left:1px solid var(--border);position:relative;}
+.stat:last-child{border-left:none;}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent);}
+.stat-n{font-family:'Bebas Neue',sans-serif;font-size:38px;color:var(--red);line-height:1;}
+.stat-l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:3px;}
 
-  /* ── Header ── */
-  header {
-    position: relative;
-    padding: 40px 40px 32px;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, #0d0f16 0%, transparent 100%);
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 16px;
-    z-index: 1;
-  }
+.main{max-width:1400px;margin:0 auto;padding:32px 40px;}
 
-  .header-left h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(32px, 5vw, 52px);
-    letter-spacing: 2px;
-    color: var(--text);
-    line-height: 1;
-  }
+.stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:18px;display:flex;align-items:center;gap:12px;}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border);}
 
-  .header-left h1 span {
-    color: var(--red);
-  }
+.highlights{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:32px;}
+.hl{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 26px;animation:fadeUp .5s ease both;}
+.hl.danger{border-color:rgba(230,57,70,.3);background:linear-gradient(135deg,var(--surface) 50%,var(--red-dim));}
+.hl.safe{border-color:rgba(46,204,113,.3);background:linear-gradient(135deg,var(--surface) 50%,var(--green-dim));}
+.hl-icon{font-size:28px;margin-bottom:10px;display:block;}
+.hl-lbl{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:6px;}
+.hl-val{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;}
+.hl.danger .hl-val{color:var(--red);}
+.hl.safe .hl-val{color:var(--green);}
+.hl-sub{font-size:12px;color:var(--muted);margin-top:5px;}
 
-  .header-left p {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 6px;
-    font-weight: 300;
-  }
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:32px;overflow-x:auto;}
+.chart{display:flex;align-items:flex-end;gap:5px;height:200px;padding-bottom:28px;position:relative;min-width:580px;}
+.chart::before{content:'';position:absolute;inset:0 0 28px 0;background:repeating-linear-gradient(to bottom,transparent,transparent calc(25% - 1px),var(--border) 25%,transparent calc(25% + 1px));pointer-events:none;}
+.col{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;cursor:pointer;position:relative;}
+.col:hover .bar{filter:brightness(1.35);}
+.col:hover .tip{opacity:1;transform:translateY(0);}
+.bar{width:100%;max-width:32px;border-radius:4px 4px 0 0;transition:all .35s ease;animation:grow .5s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes grow{from{transform:scaleY(0);transform-origin:bottom}to{transform:scaleY(1);transform-origin:bottom}}
+.bar.is-max{background:linear-gradient(180deg,#e63946,rgba(230,57,70,.3));}
+.bar.is-min{background:linear-gradient(180deg,#2ecc71,rgba(46,204,113,.3));}
+.bar.norm{background:linear-gradient(180deg,#4361ee,rgba(67,97,238,.3));}
+.tip{position:absolute;top:-24px;font-size:10px;font-weight:700;color:var(--text);opacity:0;transform:translateY(4px);transition:all .2s;white-space:nowrap;pointer-events:none;}
+.col-lbl{position:absolute;bottom:0;font-size:9px;color:var(--muted);}
 
-  .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--red-dim);
-    border: 1px solid var(--red);
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--red);
-    letter-spacing: 1px;
-  }
+.table-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;}
+table{width:100%;border-collapse:collapse;}
+thead{background:var(--surface2);border-bottom:1px solid var(--border);}
+th{padding:12px 18px;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:600;text-align:right;}
+td{padding:11px 18px;font-size:13px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.td-rank{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--muted);}
+.td-n{font-family:'Bebas Neue',sans-serif;font-size:20px;}
+.td-n.hi{color:var(--red);}.td-n.lo{color:var(--green);}.td-n.mid{color:var(--blue);}
+.bar-i{height:5px;border-radius:3px;display:inline-block;vertical-align:middle;}
 
-  .live-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--red);
-    animation: blink 1.2s ease-in-out infinite;
-  }
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:14px;color:var(--muted);}
+.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-box{background:var(--red-dim);border:1px solid rgba(230,57,70,.3);border-radius:12px;padding:28px;text-align:center;color:var(--red);font-size:13px;line-height:1.8;}
+.footer-note{font-size:11px;color:var(--muted);text-align:left;}
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
-  }
-
-  /* ── Stats bar ── */
-  .stats-bar {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    border-bottom: 1px solid var(--border);
-    position: relative;
-    z-index: 1;
-  }
-
-  .stat-card {
-    padding: 24px 28px;
-    border-left: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .stat-card:last-child { border-left: none; }
-
-  .stat-card::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--red), transparent);
-  }
-
-  .stat-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 42px;
-    color: var(--red);
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 11px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    margin-top: 4px;
-  }
-
-  /* ── Main layout ── */
-  .main {
-    position: relative;
-    z-index: 1;
-    padding: 32px 40px;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  /* ── Section title ── */
-  .section-title {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: var(--muted);
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* ── Hourly chart ── */
-  .chart-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px;
-    margin-bottom: 32px;
-    overflow-x: auto;
-  }
-
-  .chart-grid {
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    height: 220px;
-    padding-bottom: 32px;
-    position: relative;
-    min-width: 600px;
-  }
-
-  /* Horizontal guide lines */
-  .chart-grid::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 32px 0;
-    background:
-      repeating-linear-gradient(
-        to bottom,
-        transparent,
-        transparent calc(25% - 1px),
-        var(--border) calc(25%),
-        transparent calc(25% + 1px)
-      );
-    pointer-events: none;
-  }
-
-  .bar-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100%;
-    justify-content: flex-end;
-    cursor: pointer;
-    position: relative;
-  }
-
-  .bar-wrap:hover .bar { filter: brightness(1.3); }
-  .bar-wrap:hover .bar-count { opacity: 1; transform: translateY(0); }
-
-  .bar {
-    width: 100%;
-    max-width: 36px;
-    border-radius: 4px 4px 0 0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    position: relative;
-    animation: growUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  }
-
-  @keyframes growUp {
-    from { transform: scaleY(0); transform-origin: bottom; }
-    to { transform: scaleY(1); transform-origin: bottom; }
-  }
-
-  .bar-count {
-    position: absolute;
-    top: -22px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text);
-    opacity: 0;
-    transform: translateY(4px);
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-
-  .bar-label {
-    position: absolute;
-    bottom: 0;
-    font-size: 10px;
-    color: var(--muted);
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  .bar.is-min { background: linear-gradient(180deg, var(--green) 0%, rgba(46,204,113,0.4) 100%); }
-  .bar.is-max { background: linear-gradient(180deg, var(--red) 0%, rgba(230,57,70,0.4) 100%); }
-  .bar.normal { background: linear-gradient(180deg, #4361ee 0%, rgba(67,97,238,0.3) 100%); }
-
-  /* ── Highlight cards ── */
-  .highlights {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .highlight-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px 28px;
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn 0.5s ease both;
-  }
-
-  .highlight-card.danger {
-    border-color: rgba(230,57,70,0.3);
-    background: linear-gradient(135deg, var(--surface) 60%, var(--red-dim));
-  }
-
-  .highlight-card.safe {
-    border-color: rgba(46,204,113,0.3);
-    background: linear-gradient(135deg, var(--surface) 60%, var(--green-dim));
-  }
-
-  .highlight-icon {
-    font-size: 32px;
-    margin-bottom: 12px;
-    display: block;
-  }
-
-  .highlight-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-
-  .highlight-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    line-height: 1;
-  }
-
-  .highlight-card.danger .highlight-value { color: var(--red); }
-  .highlight-card.safe .highlight-value { color: var(--green); }
-
-  .highlight-sub {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 6px;
-  }
-
-  /* ── Table ── */
-  .table-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 32px;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  thead {
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-  }
-
-  th {
-    padding: 14px 20px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--muted);
-    font-weight: 600;
-    text-align: right;
-  }
-
-  td {
-    padding: 12px 20px;
-    font-size: 14px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  tr:last-child td { border-bottom: none; }
-
-  tr:hover td { background: var(--surface2); }
-
-  .rank { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--muted); }
-  .hour-range { font-weight: 700; }
-  .count-cell { font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
-  .count-cell.high { color: var(--red); }
-  .count-cell.low { color: var(--green); }
-  .count-cell.mid { color: var(--accent); }
-
-  .bar-inline {
-    height: 6px;
-    border-radius: 3px;
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-  /* ── Loading / Error ── */
-  .loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 300px;
-    gap: 16px;
-    color: var(--muted);
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 2px solid var(--border);
-    border-top-color: var(--red);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .error-box {
-    background: var(--red-dim);
-    border: 1px solid rgba(230,57,70,0.3);
-    border-radius: 12px;
-    padding: 32px;
-    text-align: center;
-    color: var(--red);
-    font-size: 14px;
-    line-height: 1.8;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .update-time {
-    font-size: 12px;
-    color: var(--muted);
-    text-align: left;
-    margin-top: 8px;
-  }
-
-  /* ── Responsive ── */
-  @media (max-width: 700px) {
-    header { padding: 24px 20px; }
-    .main { padding: 20px; }
-    .highlights { grid-template-columns: 1fr; }
-    .stats-bar { grid-template-columns: repeat(2, 1fr); }
-  }
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:680px){header{padding:20px;}.main{padding:16px;}.highlights{grid-template-columns:1fr;}.stats-strip{grid-template-columns:repeat(2,1fr);}}
 </style>
 </head>
 <body>
 
 <header>
-  <div class="header-left">
+  <div>
     <h1>אזעקות <span>לפי שעות</span></h1>
-    <p id="date-range">טוען נתונים מפיקוד העורף...</p>
+    <p id="hdr-sub">מתחבר ל-API של צבע אדום...</p>
   </div>
-  <div class="live-badge">
-    <span class="live-dot"></span>
-    LIVE
-  </div>
+  <div class="live-pill"><span class="live-dot"></span>LIVE · מתעדכן כל 60 שניות</div>
 </header>
 
-<div class="stats-bar" id="stats-bar" style="display:none">
-  <div class="stat-card">
-    <div class="stat-num" id="s-total">0</div>
-    <div class="stat-label">סה"כ אזעקות</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-num" id="s-days">0</div>
-    <div class="stat-label">ימים נבדקו</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-num" id="s-avg">0</div>
-    <div class="stat-label">ממוצע ליום</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-num" id="s-updated">—</div>
-    <div class="stat-label">עודכן בשעה</div>
-  </div>
+<div class="stats-strip" id="strip" style="display:none">
+  <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">סה"כ אזעקות</div></div>
+  <div class="stat"><div class="stat-n" id="s-events">0</div><div class="stat-l">אירועים</div></div>
+  <div class="stat"><div class="stat-n" id="s-cities">0</div><div class="stat-l">יישובים</div></div>
+  <div class="stat"><div class="stat-n" id="s-updated">—</div><div class="stat-l">עודכן</div></div>
 </div>
 
 <div class="main">
   <div id="loading" class="loading">
     <div class="spinner"></div>
-    <div>טוען היסטוריית אזעקות...</div>
+    <div>טוען נתונים מ-api.tzevaadom.co.il...</div>
   </div>
 
   <div id="content" style="display:none">
-
-    <!-- Highlights -->
-    <div class="section-title">תובנות</div>
+    <div class="stitle">תובנות</div>
     <div class="highlights">
-      <div class="highlight-card danger">
-        <span class="highlight-icon">🚨</span>
-        <div class="highlight-label">השעה הכי מסוכנת</div>
-        <div class="highlight-value" id="h-max-hour">—</div>
-        <div class="highlight-sub" id="h-max-count"></div>
+      <div class="hl danger">
+        <span class="hl-icon">🚨</span>
+        <div class="hl-lbl">הכי הרבה אזעקות בין השעות</div>
+        <div class="hl-val" id="h-max">—</div>
+        <div class="hl-sub" id="h-max-n"></div>
       </div>
-      <div class="highlight-card safe">
-        <span class="highlight-icon">😌</span>
-        <div class="highlight-label">הכי פחות אזעקות</div>
-        <div class="highlight-value" id="h-min-hour">—</div>
-        <div class="highlight-sub" id="h-min-count"></div>
+      <div class="hl safe">
+        <span class="hl-icon">😌</span>
+        <div class="hl-lbl">הכי פחות אזעקות בין השעות</div>
+        <div class="hl-val" id="h-min">—</div>
+        <div class="hl-sub" id="h-min-n"></div>
       </div>
     </div>
 
-    <!-- Bar chart -->
-    <div class="section-title">גרף שעתי</div>
-    <div class="chart-container">
-      <div class="chart-grid" id="chart-grid"></div>
+    <div class="stitle">גרף שעתי — ישראל (UTC+2/+3)</div>
+    <div class="chart-box">
+      <div class="chart" id="chart"></div>
     </div>
 
-    <!-- Table -->
-    <div class="section-title">טבלה מלאה לפי שעות</div>
-    <div class="table-container">
+    <div class="stitle">טבלה לפי שעות — ממוינת מהגבוה לנמוך</div>
+    <div class="table-box">
       <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>טווח שעות</th>
-            <th>אזעקות</th>
-            <th>יחסי</th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
+        <thead><tr><th>#</th><th>טווח שעות</th><th>אזעקות</th><th>אחוז מהשיא</th></tr></thead>
+        <tbody id="tbody"></tbody>
       </table>
     </div>
-
-    <div class="update-time" id="update-time"></div>
+    <div class="footer-note" id="footer"></div>
   </div>
 
-  <div id="error-container" style="display:none"></div>
+  <div id="err" style="display:none"></div>
 </div>
 
 <script>
-const API_URL = 'https://www.oref.org.il/WarningMessages/History/AlertsHistory.json';
-const START_DATE = new Date('2026-02-28T00:00:00');
-const REFRESH_MS = 60 * 1000; // refresh every 60 seconds
+const HISTORY_URL = 'https://api.tzevaadom.co.il/alerts-history/';
+const LIVE_URL    = 'https://api.tzevaadom.co.il/notifications';
+const START_TS    = Date.UTC(2026, 1, 28) / 1000; // 28 Feb 2026 UTC
+const REFRESH_MS  = 60_000;
 
-// Hour labels
-const HOUR_LABELS = Array.from({length: 24}, (_, i) => {
-  const h = String(i).padStart(2, '0');
-  const h2 = String((i + 1) % 24).padStart(2, '0');
-  return `${h}:00–${h2}:00`;
-});
-
-async function fetchData() {
-  const res = await fetch(API_URL, {
-    headers: {
-      'Accept': 'application/json, text/javascript, */*; q=0.01',
-      'Accept-Language': 'he-IL,he;q=0.9',
-      'Referer': 'https://www.oref.org.il/heb/alerts-history',
-      'X-Requested-With': 'XMLHttpRequest',
-    },
-    cache: 'no-store'
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const text = await res.text();
-  if (text.trim().startsWith('<')) throw new Error('geo_blocked');
-  return JSON.parse(text);
+function ilHour(ts) {
+  const d = new Date(ts * 1000);
+  return parseInt(d.toLocaleString('en-US', { timeZone:'Asia/Jerusalem', hour:'numeric', hour12:false }), 10);
 }
 
-function parseAlertDate(a) {
-  // alertDate format: "2026-02-28 14:32:00"
-  if (a.alertDate) return new Date(a.alertDate.replace(' ', 'T'));
-  // fallback date/time format: "28.02.2026" / "14:32"
-  if (a.date && a.time) {
-    const [d, m, y] = a.date.split('.');
-    return new Date(`${y}-${m}-${d}T${a.time}:00`);
+function hLabel(h) {
+  return `${String(h).padStart(2,'0')}:00 – ${String((h+1)%24).padStart(2,'0')}:00`;
+}
+
+async function fetchAll() {
+  const allPages = [];
+  // Fetch pages until we get less than 50 or exhaust data before START_TS
+  for (let offset = 0; offset < 1000; offset += 50) {
+    const r = await fetch(`${HISTORY_URL}?offset=${offset}`);
+    if (!r.ok) break;
+    const page = await r.json();
+    if (!page || page.length === 0) break;
+    allPages.push(...page);
+    if (page.length < 50) break;
+    const oldestInPage = Math.min(...page.flatMap(e => e.alerts.map(a => a.time)));
+    if (oldestInPage < START_TS) break;
   }
-  return null;
+
+  // Merge live notifications
+  try {
+    const lr = await fetch(LIVE_URL);
+    const live = await lr.json();
+    if (live && live.length) allPages.unshift({ id:'live', alerts: live });
+  } catch {}
+
+  return allPages;
 }
 
-function analyze(data) {
-  // Filter from START_DATE onward
-  const alerts = data.filter(a => {
-    const dt = parseAlertDate(a);
-    return dt && dt >= START_DATE;
-  });
+function analyze(pages) {
+  const alerts = pages.flatMap(e =>
+    (e.alerts || []).filter(a => a.time >= START_TS && !a.isDrill)
+  );
 
-  // Count by hour
   const hourCounts = new Array(24).fill(0);
+  const citySeen = new Set();
   alerts.forEach(a => {
-    const dt = parseAlertDate(a);
-    if (dt) hourCounts[dt.getHours()]++;
+    hourCounts[ilHour(a.time)]++;
+    (a.cities || []).forEach(c => citySeen.add(c));
   });
 
-  // Date range
-  const dates = alerts.map(a => parseAlertDate(a)).filter(Boolean);
-  const minDate = dates.length ? new Date(Math.min(...dates)) : START_DATE;
-  const maxDate = dates.length ? new Date(Math.max(...dates)) : new Date();
-  const diffDays = Math.max(1, Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)));
-
-  return { alerts, hourCounts, minDate, maxDate, diffDays };
+  const times = alerts.map(a => a.time);
+  return {
+    alerts, hourCounts, citySeen,
+    maxTs: times.length ? Math.max(...times) : Date.now()/1000,
+    eventCount: pages.length
+  };
 }
 
-function render({ alerts, hourCounts, minDate, maxDate, diffDays }) {
+function render({ alerts, hourCounts, citySeen, maxTs, eventCount }) {
   const max = Math.max(...hourCounts);
   const min = Math.min(...hourCounts);
-  const maxHour = hourCounts.indexOf(max);
-  const minHour = hourCounts.indexOf(min);
+  const maxH = hourCounts.indexOf(max);
+  const minH = hourCounts.indexOf(min);
   const total = alerts.length;
 
-  // Format date
-  const fmt = d => d.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const fmtDate = ts => new Date(ts*1000).toLocaleDateString('he-IL',
+    { timeZone:'Asia/Jerusalem', day:'2-digit', month:'2-digit', year:'numeric' });
 
-  // Header
-  document.getElementById('date-range').textContent =
-    `נתונים מ-${fmt(START_DATE)} עד ${fmt(maxDate)} | מתעדכן כל דקה`;
+  document.getElementById('hdr-sub').textContent =
+    `נתונים מ-28/02/2026 עד ${fmtDate(maxTs)} | מקור: api.tzevaadom.co.il`;
 
-  // Stats bar
-  document.getElementById('s-total').textContent = total.toLocaleString();
-  document.getElementById('s-days').textContent = diffDays;
-  document.getElementById('s-avg').textContent = Math.round(total / diffDays);
+  document.getElementById('s-total').textContent  = total.toLocaleString('he');
+  document.getElementById('s-events').textContent = eventCount.toLocaleString('he');
+  document.getElementById('s-cities').textContent = citySeen.size.toLocaleString('he');
   document.getElementById('s-updated').textContent =
-    new Date().toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('stats-bar').style.display = 'grid';
+    new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('strip').style.display = 'grid';
 
-  // Highlights
-  document.getElementById('h-max-hour').textContent = `${String(maxHour).padStart(2,'0')}:00`;
-  document.getElementById('h-max-count').textContent = `${max} אזעקות — ${HOUR_LABELS[maxHour]}`;
-  document.getElementById('h-min-hour').textContent = `${String(minHour).padStart(2,'0')}:00`;
-  document.getElementById('h-min-count').textContent = `${min} אזעקות — ${HOUR_LABELS[minHour]}`;
+  document.getElementById('h-max').textContent   = `${String(maxH).padStart(2,'0')}:00`;
+  document.getElementById('h-max-n').textContent = `${max} אזעקות | ${hLabel(maxH)}`;
+  document.getElementById('h-min').textContent   = `${String(minH).padStart(2,'0')}:00`;
+  document.getElementById('h-min-n').textContent = `${min} אזעקות | ${hLabel(minH)}`;
 
-  // Bar chart
-  const grid = document.getElementById('chart-grid');
-  grid.innerHTML = '';
-  hourCounts.forEach((count, hour) => {
-    const pct = max > 0 ? (count / max) * 100 : 0;
-    const isMax = count === max;
-    const isMin = count === min;
-    const cls = isMax ? 'is-max' : isMin ? 'is-min' : 'normal';
-    const delay = hour * 0.03;
-
-    const wrap = document.createElement('div');
-    wrap.className = 'bar-wrap';
-    wrap.title = `${HOUR_LABELS[hour]}: ${count} אזעקות`;
-    wrap.innerHTML = `
-      <div class="bar ${cls}" style="height:${Math.max(pct, 2)}%;animation-delay:${delay}s">
-        <span class="bar-count">${count}</span>
+  // Chart
+  const chart = document.getElementById('chart');
+  chart.innerHTML = '';
+  hourCounts.forEach((n, h) => {
+    const pct = max > 0 ? (n / max) * 100 : 0;
+    const cls = n === max ? 'is-max' : n === min ? 'is-min' : 'norm';
+    const col = document.createElement('div');
+    col.className = 'col';
+    col.title = `${hLabel(h)}: ${n} אזעקות`;
+    col.innerHTML = `
+      <div class="bar ${cls}" style="height:${Math.max(pct,1.5)}%;animation-delay:${h*0.025}s">
+        <span class="tip">${n}</span>
       </div>
-      <span class="bar-label">${String(hour).padStart(2,'0')}</span>
-    `;
-    grid.appendChild(wrap);
+      <span class="col-lbl">${String(h).padStart(2,'0')}</span>`;
+    chart.appendChild(col);
   });
 
-  // Table — sorted by count desc
-  const sorted = hourCounts.map((count, hour) => ({ hour, count }))
-    .sort((a, b) => b.count - a.count);
-
-  const tbody = document.getElementById('table-body');
+  // Table
+  const sorted = hourCounts.map((n,h)=>({h,n})).sort((a,b)=>b.n-a.n);
+  const tbody = document.getElementById('tbody');
   tbody.innerHTML = '';
-  sorted.forEach(({ hour, count }, i) => {
-    const pct = max > 0 ? Math.round((count / max) * 100) : 0;
-    const isMax = count === max;
-    const isMin = count === min;
-    const cls = isMax ? 'high' : isMin ? 'low' : 'mid';
-    const barColor = isMax ? '#e63946' : isMin ? '#2ecc71' : '#4361ee';
-
+  sorted.forEach(({h,n},i) => {
+    const pct = max > 0 ? Math.round((n/max)*100) : 0;
+    const cls = n===max?'hi':n===min?'lo':'mid';
+    const color = n===max?'#e63946':n===min?'#2ecc71':'#4361ee';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="rank">${i + 1}</td>
-      <td class="hour-range">${HOUR_LABELS[hour]}</td>
-      <td class="count-cell ${cls}">${count}</td>
+      <td class="td-rank">${i+1}</td>
+      <td>${hLabel(h)}</td>
+      <td class="td-n ${cls}">${n}</td>
       <td>
-        <span class="bar-inline" style="width:${Math.max(pct, 2)}%;background:${barColor};opacity:0.7"></span>
-        <span style="font-size:11px;color:var(--muted);margin-right:6px">${pct}%</span>
-      </td>
-    `;
+        <span class="bar-i" style="width:${Math.max(pct,1)}%;background:${color};opacity:.7"></span>
+        <span style="font-size:10px;color:var(--muted);margin-right:6px">${pct}%</span>
+      </td>`;
     tbody.appendChild(tr);
   });
 
-  document.getElementById('update-time').textContent =
-    `עודכן לאחרונה: ${new Date().toLocaleString('he-IL')}`;
+  document.getElementById('footer').textContent =
+    `עודכן: ${new Date().toLocaleString('he-IL')} | נתונים: api.tzevaadom.co.il`;
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = 'block';
 }
 
-function showError(msg) {
+function showErr(msg) {
   document.getElementById('loading').style.display = 'none';
-  document.getElementById('error-container').style.display = 'block';
-  document.getElementById('error-container').innerHTML = `
-    <div class="error-box">
-      <div style="font-size:36px;margin-bottom:12px">⚠️</div>
-      <div>${msg}</div>
-    </div>`;
+  document.getElementById('err').style.display = 'block';
+  document.getElementById('err').innerHTML =
+    `<div class="err-box"><div style="font-size:32px;margin-bottom:10px">⚠️</div>${msg}</div>`;
 }
 
-async function load() {
+async function run() {
   try {
-    const data = await fetchData();
-    const result = analyze(data);
-    render(result);
-  } catch (err) {
-    if (err.message === 'geo_blocked') {
-      showError('הגישה ל-API של פיקוד העורף אפשרית מ-IP ישראלי בלבד.<br>פתח את האתר מרשת ישראלית.');
-    } else {
-      showError(`שגיאה בטעינת הנתונים: ${err.message}`);
-    }
+    const pages = await fetchAll();
+    if (!pages.length) { showErr('לא נמצאו נתונים.'); return; }
+    render(analyze(pages));
+  } catch(e) {
+    showErr(`שגיאה בטעינת הנתונים: ${e.message}`);
   }
 }
 
-// Initial load + auto-refresh
-load();
-setInterval(load, REFRESH_MS);
+run();
+setInterval(run, REFRESH_MS);
 </script>
 </body>
 </html>
