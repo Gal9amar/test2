@@ -198,10 +198,13 @@ tr:hover td{background:var(--surface2);}
         <select class="prob-select" id="prob-hour">
           <option value="now">השעה הנוכחית</option>
         </select>
-        <span class="prob-label">בחר עיר:</span>
-        <select class="prob-select" id="prob-city">
-          <option value="">כל הארץ</option>
-        </select>
+        <span class="prob-label">עיר:</span>
+        <div style="position:relative;flex:1;min-width:160px;">
+          <input class="prob-select" id="prob-city" type="text"
+            placeholder="כל הארץ — הקלד לחיפוש..."
+            autocomplete="off" list="prob-city-list" style="width:100%">
+          <datalist id="prob-city-list"></datalist>
+        </div>
       </div>
       <div class="prob-result" id="prob-result">
         <div class="prob-card med" style="min-width:100%">
@@ -321,16 +324,13 @@ function render({ alerts, hourCounts, cityCounts, minTs, maxTs, eventCount }) {
   }
 
   // Populate city selector (first run only)
-  const citySel = document.getElementById('prob-city');
-  if (citySel.options.length === 1) {
-    const topCities = Object.entries(cityCounts).sort((a,b)=>a[0].localeCompare(b[0],'he')).slice(0, 60);
-    topCities.forEach(([name]) => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      citySel.appendChild(opt);
-    });
-  }
+  const cityDatalist = document.getElementById('prob-city-list');
+  cityDatalist.innerHTML = '';
+  Object.keys(cityCounts).sort((a,b)=>a.localeCompare(b,'he')).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    cityDatalist.appendChild(opt);
+  });
 
   function calcProb(hour, cityFilter) {
     const now = new Date();
@@ -372,7 +372,7 @@ function render({ alerts, hourCounts, cityCounts, minTs, maxTs, eventCount }) {
 
   function renderProb() {
     const hour = document.getElementById('prob-hour').value;
-    const city = document.getElementById('prob-city').value;
+    const city = document.getElementById('prob-city').value.trim();
     const { rawPct, level, levelText, desc, alertsInHour } = calcProb(hour, city);
 
     const result = document.getElementById('prob-result');
@@ -399,7 +399,7 @@ function render({ alerts, hourCounts, cityCounts, minTs, maxTs, eventCount }) {
 
   renderProb();
   document.getElementById('prob-hour').onchange = renderProb;
-  document.getElementById('prob-city').onchange = renderProb;
+  document.getElementById('prob-city').oninput = renderProb;
 
   // Chart
   const chart = document.getElementById('chart');
