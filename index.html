@@ -711,32 +711,16 @@ footer {
         </g>
 
         <!-- Track -->
-        <!-- Semicircle: center(150,170) radius 118 — from 180° to 0° -->
-        <!-- Start: (32,170) End: (268,170) -->
         <path class="arc-track"
           d="M 32,170 A 118,118 0 0,1 268,170"/>
 
-        <!-- Zone colours (faint bg tint) — drawn BEFORE fill so fill is on top -->
-        <!-- Safe zone: 0→55% of arc -->
-        <path class="arc-zone-safe"
-          d="M 32,170 A 118,118 0 0,1 268,170"
-          stroke-dasharray="205 371"
-          stroke-dashoffset="0"/>
-        <!-- Danger zone: 55→100% -->
-        <path class="arc-zone-danger"
-          d="M 32,170 A 118,118 0 0,1 268,170"
-          stroke-dasharray="166 371"
-          stroke-dashoffset="-205"/>
-
-        <!-- Fill arc — LAST so it renders on top of zones -->
-        <!-- dasharray larger than arc ensures 100% always reaches end -->
+        <!-- Fill arc — drawn last, on top of track -->
         <path class="arc-fill" id="arc-fill"
           d="M 32,170 A 118,118 0 0,1 268,170"
           stroke="url(#grad-safe)"
           filter="url(#glow-safe)"
-          stroke-dasharray="380 760"
-          stroke-dashoffset="380"
-          style="isolation:isolate"/>
+          stroke-dasharray="400 800"
+          stroke-dashoffset="400"/>
 
         <!-- Center hub dot -->
         <circle cx="150" cy="170" r="4" fill="var(--fg2)"/>
@@ -911,8 +895,7 @@ function fmtSec(s) {
   return `${Math.round(s)}ש`;
 }
 
-// dasharray=380, so ARC=380 ensures offset=0 at 100% (fills past end = fine)
-const ARC = 380;
+const ARC = 400;
 
 function setGauge(score, level) {
   const fill = document.getElementById('arc-fill');
