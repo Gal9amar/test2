@@ -334,6 +334,13 @@ header {
 .lvl-danger { --lvl-color: rgba(255,61,87,0.07);  }
 
 /* ── Duration intro (above gauge) ── */
+.duration-now {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--fg2);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
 .duration-intro {
   padding: 28px 0 20px;
   border-bottom: 1px solid var(--line2);
@@ -671,6 +678,7 @@ footer {
 
   <!-- DURATION PICKER — above gauge -->
   <div class="duration-intro">
+    <div class="duration-now" id="duration-now"></div>
     <div class="duration-intro-title">אני מתכנן פעילות בזמן של</div>
     <div class="duration-intro-sub">בחר את משך הפעילות הרצויה — המערכת תחשב עבורך את הסיכוי לאזעקה בזמן הזה</div>
     <div class="pills" id="pills">
@@ -1157,6 +1165,24 @@ document.getElementById('city-input').addEventListener('input', e => {
 
 update();
 setInterval(update, REFRESH);
+
+// Live clock
+function updateClock() {
+  const el = document.getElementById('duration-now');
+  if (!el) return;
+  const now = new Date();
+  const time = now.toLocaleTimeString('he-IL', {
+    timeZone: 'Asia/Jerusalem',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  const date = now.toLocaleDateString('he-IL', {
+    timeZone: 'Asia/Jerusalem',
+    weekday: 'long', day: 'numeric', month: 'long'
+  });
+  el.textContent = `${date} · ${time}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
 </script>
 </body>
 </html>
