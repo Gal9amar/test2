@@ -142,10 +142,11 @@ tr:hover td{background:var(--surface2);}
 </div>
 
 <script>
-const HISTORY_URL = 'https://api.tzevaadom.co.il/alerts-history/';
-const LIVE_URL    = 'https://api.tzevaadom.co.il/notifications';
-const START_TS    = Date.UTC(2026, 1, 28) / 1000; // 28 Feb 2026 UTC
-const REFRESH_MS  = 60_000;
+const PROXY        = 'https://api.codetabs.com/v1/proxy/?quest=';
+const HISTORY_URL  = 'https://api.tzevaadom.co.il/alerts-history/';
+const LIVE_URL     = 'https://api.tzevaadom.co.il/notifications';
+const START_TS     = Date.UTC(2026, 1, 28) / 1000; // 28 Feb 2026 UTC
+const REFRESH_MS   = 60_000;
 
 function ilHour(ts) {
   const d = new Date(ts * 1000);
@@ -156,24 +157,26 @@ function hLabel(h) {
   return `${String(h).padStart(2,'0')}:00 – ${String((h+1)%24).padStart(2,'0')}:00`;
 }
 
+async function proxyFetch(url) {
+  const r = await fetch(PROXY + encodeURIComponent(url));
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
 async function fetchAll() {
   const allPages = [];
-  // Fetch pages until we get less than 50 or exhaust data before START_TS
   for (let offset = 0; offset < 1000; offset += 50) {
-    const r = await fetch(`${HISTORY_URL}?offset=${offset}`);
-    if (!r.ok) break;
-    const page = await r.json();
+    const page = await proxyFetch(`${HISTORY_URL}?offset=${offset}`);
     if (!page || page.length === 0) break;
     allPages.push(...page);
     if (page.length < 50) break;
-    const oldestInPage = Math.min(...page.flatMap(e => e.alerts.map(a => a.time)));
-    if (oldestInPage < START_TS) break;
+    const oldest = Math.min(...page.flatMap(e => e.alerts.map(a => a.time)));
+    if (oldest < START_TS) break;
   }
 
   // Merge live notifications
   try {
-    const lr = await fetch(LIVE_URL);
-    const live = await lr.json();
+    const live = await proxyFetch(LIVE_URL);
     if (live && live.length) allPages.unshift({ id:'live', alerts: live });
   } catch {}
 
