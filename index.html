@@ -1018,13 +1018,13 @@ function renderScore(d) {
   const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
   const last = src.length ? src.reduce((a,b) => a.time > b.time ? a : b) : null;
   if (last) {
-    const cities = (last.cities||[]).join(', ') || '—';
+    const cityDisplay = selCity || (last.cities||[]).join(', ') || '—';
     const alertTime = new Date(last.time * 1000).toLocaleString('he-IL', {
       timeZone:'Asia/Jerusalem', day:'2-digit', month:'2-digit',
       hour:'2-digit', minute:'2-digit'
     });
     const ago = fmtSec(Date.now()/1000 - last.time);
-    document.getElementById('la-city').textContent = cities;
+    document.getElementById('la-city').textContent = cityDisplay;
     document.getElementById('la-time').textContent = alertTime;
     document.getElementById('la-ago').textContent  = ago + ' לפני';
   }
