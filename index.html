@@ -625,11 +625,7 @@ footer {
 
 <!-- ── HEADER ── -->
 <header>
-  <div class="h-left">
-    <div class="h-logo">זמן<span class="slash">/</span>בטוח</div>
-    <div class="h-meta"><span id="hdr-meta">CONNECTING TO OREF FEED...</span></div>
-  </div>
-  <div class="live-pill"><span class="live-dot"></span>LIVE&nbsp;·&nbsp;30S</div>
+  <div class="h-logo">זמן<span class="slash">/</span>בטוח</div>
 </header>
 
 <!-- ── DISCLAIMER ── -->
@@ -1009,8 +1005,6 @@ async function update() {
       timeZone:'Asia/Jerusalem',day:'2-digit',month:'2-digit',
       hour:'2-digit',minute:'2-digit'
     });
-    document.getElementById('hdr-meta').textContent =
-      `FEED: ${fmt(oldest)} → ${fmt(newest)} · ${allAlerts.length} ALERTS`;
 
     renderScore(calcScore(allAlerts, selCity, selDur));
     renderTimeline(allAlerts);
