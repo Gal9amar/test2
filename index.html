@@ -907,16 +907,21 @@ function calcScore(alerts, city, durMin) {
 }
 
 function fmtSec(s) {
-  if (s > 86400 * 3) return '>3 ימים';
+  if (s > 86400 * 3) return 'יותר מ-3 ימים';
+  if (s >= 86400) {
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    return h > 0 ? `${d} ימים ${h} שעות` : `${d} ימים`;
+  }
   if (s >= 3600) {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
-    return `${h}ש׳ ${m}דק׳`;
+    return m > 0 ? `${h} שעות ${m} דקות` : `${h} שעות`;
   }
   if (s >= 60) {
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
-    return sec > 0 ? `${m}דק׳ ${sec}ש׳` : `${m}דק׳`;
+    return sec > 0 ? `${m} דקות ${sec} שניות` : `${m} דקות`;
   }
   return `${Math.round(s)} שניות`;
 }
