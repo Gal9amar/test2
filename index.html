@@ -367,6 +367,32 @@ header {
   display: flex; align-items: center; gap: 12px;
   margin: 28px 0 16px;
 }
+/* ── Last alert card ── */
+.last-alert-card {
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.la-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+.la-field { display: flex; flex-direction: column; gap: 5px; }
+.la-label {
+  font-family: var(--mono);
+  font-size: 9px; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--fg3);
+}
+.la-val {
+  font-family: var(--mono);
+  font-size: clamp(13px, 3vw, 16px);
+  font-weight: 700; color: var(--fg);
+  line-height: 1.2;
+}
+
 .divider-line { flex:1; height:1px; background: var(--line2); }
 .divider-txt  {
   font-family: var(--mono); font-size: 10px;
@@ -762,6 +788,25 @@ footer {
     <div class="city-msg" id="city-msg"></div>
   </div>
 
+  <!-- LAST ALERT -->
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">האזעקה האחרונה</div><div class="divider-line"></div></div>
+  <div class="last-alert-card" id="last-alert-card">
+    <div class="la-row">
+      <div class="la-field">
+        <div class="la-label">עיר / אזור</div>
+        <div class="la-val" id="la-city">—</div>
+      </div>
+      <div class="la-field">
+        <div class="la-label">שעה</div>
+        <div class="la-val" id="la-time">—</div>
+      </div>
+      <div class="la-field">
+        <div class="la-label">לפני</div>
+        <div class="la-val" id="la-ago">—</div>
+      </div>
+    </div>
+  </div>
+
   <!-- DIVIDER -->
   <div class="divider"><div class="divider-line"></div><div class="divider-txt">נתונים</div><div class="divider-line"></div></div>
 
@@ -960,6 +1005,21 @@ function renderScore(d) {
   const ctx = selCity ? `ב${selCity}` : 'ממוצע ארצי';
   document.getElementById('st-since-l').innerHTML = `זמן שעבר מהאזעקה<br>האחרונה · ${ctx}`;
   document.getElementById('st-24h-l').innerHTML   = `התרעות ב-24 שעות<br>${ctx}`;
+
+  // Last alert card — always from full allAlerts (not city-filtered)
+  const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
+  const last = src.length ? src.reduce((a,b) => a.time > b.time ? a : b) : null;
+  if (last) {
+    const cities = (last.cities||[]).join(', ') || '—';
+    const alertTime = new Date(last.time * 1000).toLocaleString('he-IL', {
+      timeZone:'Asia/Jerusalem', day:'2-digit', month:'2-digit',
+      hour:'2-digit', minute:'2-digit'
+    });
+    const ago = fmtSec(Date.now()/1000 - last.time);
+    document.getElementById('la-city').textContent = cities;
+    document.getElementById('la-time').textContent = alertTime;
+    document.getElementById('la-ago').textContent  = ago + ' לפני';
+  }
 }
 
 function renderTimeline(alerts) {
