@@ -862,14 +862,18 @@ function calcScore(alerts, city, durMin) {
 }
 
 function fmtSec(s) {
-  if (s > 86400*3) return '>3 ימים';
+  if (s > 86400 * 3) return '>3 ימים';
   if (s >= 3600) {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
-    return `${h}:${String(m).padStart(2,'0')}`;
+    return `${h}ש׳ ${m}דק׳`;
   }
-  if (s >= 60) return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-  return `${Math.round(s)}ש`;
+  if (s >= 60) {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return sec > 0 ? `${m}דק׳ ${sec}ש׳` : `${m}דק׳`;
+  }
+  return `${Math.round(s)} שניות`;
 }
 
 // Use browser's exact path length measurement — no hardcoded constants
