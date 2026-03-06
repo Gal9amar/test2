@@ -51,22 +51,37 @@ header{position:relative;z-index:1;padding:28px 32px 24px;border-bottom:1px soli
 .stitle{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:3px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
 .stitle::after{content:'';flex:1;height:1px;background:var(--border);}
 
-/* Highlights */
-.highlights{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px;}
-.hl{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;animation:fadeUp .5s ease both;}
-.hl:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.3);}
-.hl::after{content:'';position:absolute;inset:0;border-radius:var(--radius);opacity:0;transition:opacity .3s;pointer-events:none;}
-.hl.peak{border-color:rgba(224,123,106,.25);}
-.hl.peak::after{background:linear-gradient(135deg,transparent 60%,var(--coral-dim));}
-.hl.quiet{border-color:rgba(77,184,164,.25);}
-.hl.quiet::after{background:linear-gradient(135deg,transparent 60%,var(--teal-dim));}
-.hl:hover::after{opacity:1;}
-.hl-icon{font-size:22px;margin-bottom:8px;display:block;}
-.hl-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:5px;}
-.hl-val{font-family:'Rubik',sans-serif;font-size:30px;font-weight:700;line-height:1;}
-.hl.peak  .hl-val{color:var(--coral);}
-.hl.quiet .hl-val{color:var(--teal);}
-.hl-sub{font-size:12px;color:var(--text2);margin-top:5px;}
+/* Probability widget */
+.prob-widget{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 26px;margin-bottom:28px;animation:fadeUp .5s ease both;}
+.prob-controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px;}
+.prob-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap;}
+.prob-select{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;color:var(--text);font-family:'Heebo',sans-serif;font-size:13px;outline:none;cursor:pointer;transition:border-color .2s,box-shadow .2s;direction:rtl;}
+.prob-select:focus{border-color:rgba(91,141,238,.5);box-shadow:0 0 0 3px rgba(91,141,238,.08);}
+.prob-result{display:flex;align-items:stretch;gap:16px;flex-wrap:wrap;}
+.prob-card{flex:1;min-width:200px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+.prob-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.3);}
+.prob-card.high{border-color:rgba(224,123,106,.35);}
+.prob-card.med {border-color:rgba(91,141,238,.35);}
+.prob-card.low {border-color:rgba(77,184,164,.35);}
+.prob-card-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px;}
+.prob-card-text{font-size:13px;color:var(--text2);line-height:1.55;margin-bottom:14px;}
+.prob-card-text strong{color:var(--text);font-weight:700;}
+.prob-pct-wrap{display:flex;align-items:flex-end;gap:6px;}
+.prob-pct{font-family:'Rubik',sans-serif;font-size:52px;font-weight:700;line-height:1;}
+.prob-pct-sym{font-family:'Rubik',sans-serif;font-size:24px;font-weight:600;color:var(--muted);padding-bottom:8px;}
+.prob-card.high .prob-pct{color:var(--coral);}
+.prob-card.med  .prob-pct{color:var(--accent);}
+.prob-card.low  .prob-pct{color:var(--teal);}
+.prob-bar-wrap{height:5px;background:var(--border);border-radius:3px;margin-top:14px;overflow:hidden;}
+.prob-bar-fill{height:100%;border-radius:3px;transition:width .8s cubic-bezier(.34,1.56,.64,1);}
+.prob-card.high .prob-bar-fill{background:linear-gradient(90deg,var(--coral),rgba(224,123,106,.4));}
+.prob-card.med  .prob-bar-fill{background:linear-gradient(90deg,var(--accent),rgba(91,141,238,.4));}
+.prob-card.low  .prob-bar-fill{background:linear-gradient(90deg,var(--teal),rgba(77,184,164,.4));}
+.prob-glow{position:absolute;top:-30px;left:-30px;width:120px;height:120px;border-radius:50%;opacity:.06;pointer-events:none;}
+.prob-card.high .prob-glow{background:var(--coral);}
+.prob-card.med  .prob-glow{background:var(--accent);}
+.prob-card.low  .prob-glow{background:var(--teal);}
+@media(max-width:600px){.prob-controls{gap:8px;}.prob-select{width:100%;}.prob-card{min-width:100%;}.prob-pct{font-size:42px;}}
 
 /* Chart */
 .chart-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 20px 0;margin-bottom:28px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -176,19 +191,23 @@ tr:hover td{background:var(--surface2);}
 
   <div id="content" style="display:none">
 
-    <div class="stitle">תובנות · 48 שעות אחרונות</div>
-    <div class="highlights">
-      <div class="hl peak">
-        <span class="hl-icon">🔺</span>
-        <div class="hl-lbl">שעת השיא — הכי הרבה אזעקות</div>
-        <div class="hl-val" id="h-max">—</div>
-        <div class="hl-sub" id="h-max-n"></div>
+    <div class="stitle">סיכוי לאזעקה · 48 שעות אחרונות</div>
+    <div class="prob-widget">
+      <div class="prob-controls">
+        <span class="prob-label">בחר שעה:</span>
+        <select class="prob-select" id="prob-hour">
+          <option value="now">השעה הנוכחית</option>
+        </select>
+        <span class="prob-label">בחר עיר:</span>
+        <select class="prob-select" id="prob-city">
+          <option value="">כל הארץ</option>
+        </select>
       </div>
-      <div class="hl quiet">
-        <span class="hl-icon">🔹</span>
-        <div class="hl-lbl">שעת השקט — הכי פחות אזעקות</div>
-        <div class="hl-val" id="h-min">—</div>
-        <div class="hl-sub" id="h-min-n"></div>
+      <div class="prob-result" id="prob-result">
+        <div class="prob-card med" style="min-width:100%">
+          <div class="prob-glow"></div>
+          <div class="prob-card-lbl">טוען נתונים...</div>
+        </div>
       </div>
     </div>
 
@@ -290,10 +309,100 @@ function render({ alerts, hourCounts, cityCounts, minTs, maxTs, eventCount }) {
     new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('strip').style.display = 'grid';
 
-  document.getElementById('h-max').textContent   = `${String(maxH).padStart(2,'0')}:00`;
-  document.getElementById('h-max-n').textContent = `${max} אזעקות · ${hLabel(maxH)}`;
-  document.getElementById('h-min').textContent   = `${String(minH).padStart(2,'0')}:00`;
-  document.getElementById('h-min-n').textContent = `${min} אזעקות · ${hLabel(minH)}`;
+  // ── Probability widget ──
+  const totalHours = 48; // API window
+
+  // Populate hour selector (first run only)
+  const hourSel = document.getElementById('prob-hour');
+  if (hourSel.options.length === 1) {
+    for (let h = 0; h < 24; h++) {
+      const opt = document.createElement('option');
+      opt.value = h;
+      opt.textContent = hLabel(h);
+      hourSel.appendChild(opt);
+    }
+  }
+
+  // Populate city selector (first run only)
+  const citySel = document.getElementById('prob-city');
+  if (citySel.options.length === 1) {
+    const topCities = Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]).slice(0, 60);
+    topCities.forEach(([name]) => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      citySel.appendChild(opt);
+    });
+  }
+
+  function calcProb(hour, cityFilter) {
+    const now = new Date();
+    const nowHour = parseInt(now.toLocaleString('en-US', { timeZone:'Asia/Jerusalem', hour:'numeric', hour12:false }), 10);
+    const h = (hour === 'now') ? nowHour : parseInt(hour, 10);
+
+    let alertsInHour, totalInScope;
+    if (cityFilter) {
+      // For a specific city: how many hours in the 48h window had alerts for this city
+      const cityAlerts = alerts.filter(a => (a.cities||[]).includes(cityFilter));
+      alertsInHour = cityAlerts.filter(a => ilHour(a.time) === h).length;
+      totalInScope  = cityAlerts.length;
+    } else {
+      alertsInHour = hourCounts[h];
+      totalInScope  = total;
+    }
+
+    // Probability = fraction of "active hours" that had alerts at this hour
+    // We express it as: out of the 48h window (2 data points per hour across 2 days),
+    // how many times did an alert fire in this hour slot?
+    // Simple ratio: alertsInHour / max possible alerts per hour (we use hourCounts max as baseline)
+    const maxInAnyHour = cityFilter
+      ? Math.max(...new Array(24).fill(0).map((_,hh)=>
+          alerts.filter(a=>(a.cities||[]).includes(cityFilter)&&ilHour(a.time)===hh).length))
+      : max;
+
+    const rawPct = maxInAnyHour > 0 ? Math.round((alertsInHour / maxInAnyHour) * 100) : 0;
+
+    // Risk level
+    const level = rawPct >= 60 ? 'high' : rawPct >= 25 ? 'med' : 'low';
+    const levelText = rawPct >= 60 ? 'גבוה' : rawPct >= 25 ? 'בינוני' : 'נמוך';
+    const displayH = String(h).padStart(2,'0');
+    const nextH = String((h+1)%24).padStart(2,'0');
+    const cityTxt = cityFilter ? `ב<strong>${cityFilter}</strong>` : 'בכל הארץ';
+    const desc = `${cityTxt}, בין השעות <strong>${displayH}:00</strong> ל-<strong>${nextH}:00</strong>`;
+
+    return { rawPct, level, levelText, desc, alertsInHour, h };
+  }
+
+  function renderProb() {
+    const hour = document.getElementById('prob-hour').value;
+    const city = document.getElementById('prob-city').value;
+    const { rawPct, level, levelText, desc, alertsInHour } = calcProb(hour, city);
+
+    const result = document.getElementById('prob-result');
+    result.innerHTML = `
+      <div class="prob-card ${level}" style="min-width:100%">
+        <div class="prob-glow"></div>
+        <div class="prob-card-lbl">סיכוי לאזעקה · רמת סיכון: ${levelText}</div>
+        <div class="prob-card-text">
+          ${desc}<br>
+          הסיכוי שתהיה אזעקה הוא:
+        </div>
+        <div class="prob-pct-wrap">
+          <div class="prob-pct">${rawPct}</div>
+          <div class="prob-pct-sym">%</div>
+        </div>
+        <div class="prob-bar-wrap">
+          <div class="prob-bar-fill" style="width:${rawPct}%"></div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:10px">
+          בוסס על ${alertsInHour} אזעקות בשעה זו מתוך 48 שעות הנתונים האחרונות
+        </div>
+      </div>`;
+  }
+
+  renderProb();
+  document.getElementById('prob-hour').onchange = renderProb;
+  document.getElementById('prob-city').onchange = renderProb;
 
   // Chart
   const chart = document.getElementById('chart');
