@@ -716,7 +716,7 @@ footer {
         <path class="arc-track"
           d="M 32,170 A 118,118 0 0,1 268,170"/>
 
-        <!-- Zone colours (faint bg tint) -->
+        <!-- Zone colours (faint bg tint) — drawn BEFORE fill so fill is on top -->
         <!-- Safe zone: 0→55% of arc -->
         <path class="arc-zone-safe"
           d="M 32,170 A 118,118 0 0,1 268,170"
@@ -728,14 +728,15 @@ footer {
           stroke-dasharray="166 371"
           stroke-dashoffset="-205"/>
 
-        <!-- Fill arc -->
+        <!-- Fill arc — LAST so it renders on top of zones -->
         <!-- π*118 ≈ 371 -->
         <path class="arc-fill" id="arc-fill"
           d="M 32,170 A 118,118 0 0,1 268,170"
           stroke="url(#grad-safe)"
           filter="url(#glow-safe)"
           stroke-dasharray="371 742"
-          stroke-dashoffset="371"/>
+          stroke-dashoffset="371"
+          style="isolation:isolate"/>
 
         <!-- Center hub dot -->
         <circle cx="150" cy="170" r="4" fill="var(--fg2)"/>
@@ -915,7 +916,7 @@ const ARC = 371;
 
 function setGauge(score, level) {
   const fill = document.getElementById('arc-fill');
-  const visual = score === 0 ? 0 : Math.max(score, 5); // min 5% visual so low scores are visible
+  const visual = score === 0 ? 0 : Math.max(score, 8); // min 8% visual so low scores are visible
   const offset = ARC - (visual / 100) * ARC;
   fill.style.strokeDashoffset = offset;
   const gradMap = { safe:'url(#grad-safe)', warn:'url(#grad-warn)', danger:'url(#grad-danger)' };
