@@ -73,6 +73,24 @@ tr:hover td{background:var(--surface2);}
 .td-n.hi{color:var(--red);}.td-n.lo{color:var(--green);}.td-n.mid{color:var(--blue);}
 .bar-i{height:5px;border-radius:3px;display:inline-block;vertical-align:middle;}
 
+.city-search-wrap{position:relative;margin-bottom:16px;}
+.city-search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;color:var(--text);font-family:'Heebo',sans-serif;font-size:14px;direction:rtl;outline:none;transition:border-color .2s;}
+.city-search:focus{border-color:rgba(76,201,240,.5);}
+.city-search::placeholder{color:var(--muted);}
+.city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:16px;}
+.city-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:14px;transition:border-color .2s,background .2s;animation:fadeUp .4s ease both;}
+.city-card:hover{border-color:rgba(230,57,70,.35);background:var(--surface2);}
+.city-rank{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--muted);min-width:28px;text-align:center;}
+.city-rank.gold{color:#ffd700;}.city-rank.silver{color:#c0c0c0;}.city-rank.bronze{color:#cd7f32;}
+.city-info{flex:1;min-width:0;}
+.city-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.city-bar-wrap{height:4px;background:var(--border);border-radius:2px;margin-top:6px;}
+.city-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--red),var(--orange));transition:width .6s cubic-bezier(.34,1.56,.64,1);}
+.city-count{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--red);line-height:1;}
+.city-pct{font-size:10px;color:var(--muted);}
+.show-more{display:block;width:100%;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Heebo',sans-serif;font-size:13px;cursor:pointer;text-align:center;margin-bottom:32px;transition:all .2s;}
+.show-more:hover{background:var(--surface2);color:var(--text);border-color:rgba(76,201,240,.4);}
+
 .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:280px;gap:14px;color:var(--muted);}
 .spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -80,7 +98,7 @@ tr:hover td{background:var(--surface2);}
 .footer-note{font-size:11px;color:var(--muted);text-align:left;}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:680px){header{padding:20px;}.main{padding:16px;}.highlights{grid-template-columns:1fr;}.stats-strip{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:680px){header{padding:20px;}.main{padding:16px;}.highlights{grid-template-columns:1fr;}.stats-strip{grid-template-columns:repeat(2,1fr);}.city-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -127,6 +145,13 @@ tr:hover td{background:var(--surface2);}
     <div class="chart-box">
       <div class="chart" id="chart"></div>
     </div>
+
+    <div class="stitle">סטטיסטיקת ישובים — ממוינת מהגבוה לנמוך</div>
+    <div class="city-search-wrap">
+      <input class="city-search" id="city-search" type="text" placeholder="🔍 חיפוש ישוב...">
+    </div>
+    <div class="city-grid" id="city-grid"></div>
+    <button class="show-more" id="show-more" style="display:none">הצג עוד ישובים ▼</button>
 
     <div class="stitle">טבלה לפי שעות — ממוינת מהגבוה לנמוך</div>
     <div class="table-box">
@@ -189,21 +214,21 @@ function analyze(pages) {
   );
 
   const hourCounts = new Array(24).fill(0);
-  const citySeen = new Set();
+  const cityCounts = {};
   alerts.forEach(a => {
     hourCounts[ilHour(a.time)]++;
-    (a.cities || []).forEach(c => citySeen.add(c));
+    (a.cities || []).forEach(c => { cityCounts[c] = (cityCounts[c] || 0) + 1; });
   });
 
   const times = alerts.map(a => a.time);
   return {
-    alerts, hourCounts, citySeen,
+    alerts, hourCounts, cityCounts,
     maxTs: times.length ? Math.max(...times) : Date.now()/1000,
     eventCount: pages.length
   };
 }
 
-function render({ alerts, hourCounts, citySeen, maxTs, eventCount }) {
+function render({ alerts, hourCounts, cityCounts, maxTs, eventCount }) {
   const max = Math.max(...hourCounts);
   const min = Math.min(...hourCounts);
   const maxH = hourCounts.indexOf(max);
@@ -218,7 +243,7 @@ function render({ alerts, hourCounts, citySeen, maxTs, eventCount }) {
 
   document.getElementById('s-total').textContent  = total.toLocaleString('he');
   document.getElementById('s-events').textContent = eventCount.toLocaleString('he');
-  document.getElementById('s-cities').textContent = citySeen.size.toLocaleString('he');
+  document.getElementById('s-cities').textContent = Object.keys(cityCounts).length.toLocaleString('he');
   document.getElementById('s-updated').textContent =
     new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
   document.getElementById('strip').style.display = 'grid';
@@ -264,6 +289,61 @@ function render({ alerts, hourCounts, citySeen, maxTs, eventCount }) {
       </td>`;
     tbody.appendChild(tr);
   });
+
+
+  // ── City statistics ──
+  const sortedCities = Object.entries(cityCounts).sort((a,b)=>b[1]-a[1]);
+  const cityMax = sortedCities.length ? sortedCities[0][1] : 1;
+  let cityLimit = 30;
+  let cityFilter = '';
+
+  function renderCities() {
+    const grid = document.getElementById('city-grid');
+    const filtered = cityFilter
+      ? sortedCities.filter(([name]) => name.includes(cityFilter))
+      : sortedCities;
+    const visible = filtered.slice(0, cityLimit);
+    grid.innerHTML = '';
+    visible.forEach(([name, count], i) => {
+      const rank = i + 1;
+      const rankCls = rank===1?'gold':rank===2?'silver':rank===3?'bronze':'';
+      const pct = Math.round((count / cityMax) * 100);
+      const card = document.createElement('div');
+      card.className = 'city-card';
+      card.style.animationDelay = `${Math.min(i,20)*0.03}s`;
+      card.innerHTML = `
+        <div class="city-rank ${rankCls}">${rank}</div>
+        <div class="city-info">
+          <div class="city-name">${name}</div>
+          <div class="city-bar-wrap"><div class="city-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div style="text-align:center">
+          <div class="city-count">${count}</div>
+          <div class="city-pct">${pct}%</div>
+        </div>`;
+      grid.appendChild(card);
+    });
+    const btn = document.getElementById('show-more');
+    if (!cityFilter && filtered.length > cityLimit) {
+      btn.style.display = 'block';
+      btn.textContent = `הצג עוד (${filtered.length - cityLimit} נוספים) ▼`;
+    } else {
+      btn.style.display = 'none';
+    }
+  }
+
+  renderCities();
+
+  document.getElementById('show-more').onclick = () => {
+    cityLimit += 30;
+    renderCities();
+  };
+
+  document.getElementById('city-search').oninput = e => {
+    cityFilter = e.target.value.trim();
+    cityLimit = 30;
+    renderCities();
+  };
 
   document.getElementById('footer').textContent =
     `עודכן: ${new Date().toLocaleString('he-IL')} | נתונים: api.tzevaadom.co.il`;
