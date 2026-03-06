@@ -1297,7 +1297,20 @@ document.getElementById('city-input').addEventListener('input', e => {
   } else if (known.includes(v)) {
     selCity = v;
     statusEl.textContent = '✅';
-    msgEl.textContent = `✓ נמצא — ${cityCounts[v]} התרעות ב-48 שעות האחרונות`;
+    // Compute city-specific stats
+    const cityAlerts = allAlerts.filter(a => (a.cities||[]).includes(v));
+    const count48 = cityCounts[v] || 0;
+    const now = Date.now() / 1000;
+    const count24 = cityAlerts.filter(a => a.time >= now - 86400).length;
+    const times = cityAlerts.map(a => a.time).sort((a,b) => b-a);
+    const sinceStr = times.length
+      ? fmtSec(now - times[0]) + ' מאז האחרונה'
+      : 'לא נרשמו התרעות';
+    const alertWord = count48 === 1 ? 'התרעה' : 'התרעות';
+    msgEl.innerHTML =
+      `✓ <strong>${v}</strong> — ${count48} ${alertWord} ב-48 שעות האחרונות` +
+      (count24 > 0 ? ` · ${count24} ב-24 שעות האחרונות` : '') +
+      ` · ${sinceStr}`;
     msgEl.className = 'city-msg ok';
   } else {
     selCity = '';
