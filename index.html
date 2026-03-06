@@ -915,7 +915,8 @@ const ARC = 371;
 
 function setGauge(score, level) {
   const fill = document.getElementById('arc-fill');
-  const offset = ARC - (score / 100) * ARC;
+  const visual = Math.max(score, 1); // always show at least a sliver
+  const offset = ARC - (visual / 100) * ARC;
   fill.style.strokeDashoffset = offset;
   const gradMap = { safe:'url(#grad-safe)', warn:'url(#grad-warn)', danger:'url(#grad-danger)' };
   const filtMap = { safe:'url(#glow-safe)', warn:'url(#glow-warn)', danger:'url(#glow-danger)' };
