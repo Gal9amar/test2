@@ -1026,7 +1026,7 @@ function renderScore(d) {
     const ago = fmtSec(Date.now()/1000 - last.time);
     document.getElementById('la-city').textContent = cityDisplay;
     document.getElementById('la-time').textContent = alertTime;
-    document.getElementById('la-ago').textContent  = ago + ' לפני';
+    document.getElementById('la-ago').textContent  = ago;
   }
 }
 
