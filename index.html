@@ -916,7 +916,7 @@ const ARC = 371;
 
 function setGauge(score, level) {
   const fill = document.getElementById('arc-fill');
-  const visual = score === 0 ? 0 : Math.max(score, 8); // min 8% visual so low scores are visible
+  const visual = score === 0 ? 0 : Math.max(score, 3); // min 3% = ~11px, visible over stroke-width 16
   const offset = ARC - (visual / 100) * ARC;
   fill.style.strokeDashoffset = offset;
   const gradMap = { safe:'url(#grad-safe)', warn:'url(#grad-warn)', danger:'url(#grad-danger)' };
