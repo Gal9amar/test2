@@ -762,7 +762,7 @@ footer {
         <span id="sc-time" style="font-size:10px;opacity:.5"></span>
       </div>
       <div class="hero-sentence" id="sc-sent">מחשב ציון בטיחות...</div>
-      <div class="hero-sub" id="sc-sub"></div>
+
     </div>
 
     <!-- hidden compat -->
@@ -975,8 +975,7 @@ function renderScore(d) {
   applyLevel(level);
 
   const trendTxt = trend==='up'?'↑ עולה':trend==='down'?'↓ יורדת':'→ יציבה';
-  document.getElementById('sc-sub').textContent =
-    `מגמה: ${trendTxt} · מרווח ממוצע: ${fmtSec(avgGap)} · ב-24ש׳: ${cnt24} התרעות`;
+
 
   document.getElementById('st-since').textContent = fmtSec(since);
   document.getElementById('st-avg').textContent   = fmtSec(avgGap);
