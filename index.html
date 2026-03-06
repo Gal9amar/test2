@@ -790,15 +790,15 @@ footer {
   <div class="stats-row">
     <div class="stat-box">
       <div class="stat-n" id="st-since">—</div>
-      <div class="stat-l">מאז<br>אחרונה</div>
+      <div class="stat-l" id="st-since-l">זמן שעבר<br>מהאזעקה האחרונה</div>
     </div>
     <div class="stat-box">
       <div class="stat-n" id="st-avg">—</div>
-      <div class="stat-l">מרווח<br>ממוצע 6ש׳</div>
+      <div class="stat-l">ממוצע<br>בין אזעקות</div>
     </div>
     <div class="stat-box">
       <div class="stat-n" id="st-24h">—</div>
-      <div class="stat-l">התרעות<br>24 שעות</div>
+      <div class="stat-l" id="st-24h-l">התרעות<br>ב-24 שעות</div>
     </div>
   </div>
 
@@ -828,17 +828,14 @@ footer {
       · עבר זמן של <strong>יותר מ-2.5× המרווח הממוצע</strong> ללא התרעה → ×0.82<br>
       · <strong>נפח ב-24 שעות</strong>: מוסיף עד 45% לציון הסופי
       <br><br>
-      <strong>רמות:</strong> נמוך 0–24% · בינוני 25–54% · גבוה 55%+<br>
-      <strong>מקור:</strong> api.tzevaadom.co.il · מתרענן כל 30 שניות
+      <strong>רמות:</strong> נמוך 0–24% · בינוני 25–54% · גבוה 55%+
     </p>
   </div>
 
 </div><!-- #app -->
 
 <footer>
-  <span>SRC: api.tzevaadom.co.il</span>
-  <span id="footer-t"></span>
-  <span>NOT A SUBSTITUTE FOR OFFICIAL ORDERS</span>
+  <span>נבנה ע"י גל עמר · כל הזכויות שמורות</span>
 </footer>
 
 </div><!-- .wrap -->
@@ -980,6 +977,11 @@ function renderScore(d) {
   document.getElementById('st-since').textContent = fmtSec(since);
   document.getElementById('st-avg').textContent   = fmtSec(avgGap);
   document.getElementById('st-24h').textContent   = cnt24;
+
+  // Update stat sublabels to reflect city/national context
+  const ctx = selCity ? `ב${selCity}` : 'ממוצע ארצי';
+  document.getElementById('st-since-l').innerHTML = `זמן שעבר מהאזעקה<br>האחרונה · ${ctx}`;
+  document.getElementById('st-24h-l').innerHTML   = `התרעות ב-24 שעות<br>${ctx}`;
 }
 
 function renderTimeline(alerts) {
@@ -1035,8 +1037,6 @@ async function update() {
     renderScore(calcScore(allAlerts, selCity, selDur));
     renderTimeline(allAlerts);
 
-    document.getElementById('footer-t').textContent =
-      `LAST_SYNC: ${new Date().toLocaleString('he-IL')}`;
     document.getElementById('loading').style.display = 'none';
     document.getElementById('app').style.display     = 'block';
   } catch(e) {
