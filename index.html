@@ -18,8 +18,8 @@
   --line2:   rgba(255,255,255,0.12);
 
   --fg:      #d4dce8;
-  --fg2:     #5a6a80;
-  --fg3:     #2d3a4a;
+  --fg2:     #8a9bb5;
+  --fg3:     #4e6080;
 
   --safe:    #00e5a0;
   --safe2:   rgba(0,229,160,0.15);
@@ -101,7 +101,7 @@ header {
 .h-meta {
   font-family: var(--mono);
   font-size: 10px;
-  color: var(--fg3);
+  color: var(--fg2);
   letter-spacing: 1px;
 }
 .h-meta span { color: var(--fg2); }
@@ -275,7 +275,7 @@ header {
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 3px;
-  color: var(--fg3);
+  color: var(--fg2);
   text-transform: uppercase;
   margin-top: 2px;
 }
@@ -327,7 +327,7 @@ header {
 .hero-sub {
   font-family: var(--mono);
   font-size: 11px;
-  color: var(--fg3);
+  color: var(--fg2);
   letter-spacing: 1px;
 }
 
@@ -346,7 +346,7 @@ header {
 .divider-line { flex:1; height:1px; background: var(--line2); }
 .divider-txt  {
   font-family: var(--mono); font-size: 10px;
-  color: var(--fg3); letter-spacing: 3px; text-transform: uppercase;
+  color: var(--fg2); letter-spacing: 3px; text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -374,7 +374,7 @@ header {
 .ctrl-lbl {
   font-family: var(--mono);
   font-size: 10px; letter-spacing: 2.5px;
-  text-transform: uppercase; color: var(--fg3);
+  text-transform: uppercase; color: var(--fg2);
   margin-bottom: 12px;
 }
 
@@ -468,7 +468,7 @@ header {
 }
 .stat-l {
   font-family: var(--mono);
-  font-size: 9px; color: var(--fg3);
+  font-size: 9px; color: var(--fg2);
   text-transform: uppercase; letter-spacing: 1px;
   line-height: 1.4;
 }
@@ -522,7 +522,7 @@ header {
 }
 .tl-lbl {
   position: absolute; bottom: 4px;
-  font-family: var(--mono); font-size: 8px; color: var(--fg3);
+  font-family: var(--mono); font-size: 8px; color: var(--fg2);
   letter-spacing: .5px;
 }
 
@@ -561,7 +561,7 @@ footer {
   border-top: 1px solid var(--line);
   padding: 18px 0 0;
   font-family: var(--mono);
-  font-size: 10px; color: var(--fg3);
+  font-size: 10px; color: var(--fg2);
   display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between;
   letter-spacing: 1px;
 }
@@ -697,10 +697,10 @@ footer {
           stroke-dasharray="371 742"
           stroke-dashoffset="371"/>
 
-        <!-- Needle -->
+        <!-- Needle: tip at (150, 170-118) = (150, 52) exactly on arc radius -->
         <g class="needle-group" id="needle-group">
           <line class="needle-line" id="needle-line"
-            x1="150" y1="170" x2="150" y2="60"
+            x1="150" y1="170" x2="150" y2="52"
             stroke="var(--fg)"/>
           <circle class="needle-hub" cx="150" cy="170" r="5"/>
         </g>
@@ -901,7 +901,9 @@ function setGauge(score, level) {
   fill.setAttribute('stroke', gradMap[level]);
   fill.setAttribute('filter', filtMap[level]);
 
-  // Needle: rotates from -90° (left = 0%) to +90° (right = 100%)
+  // Needle: at 0% points LEFT (-90°), at 50% points UP (0°), at 100% points RIGHT (+90°)
+  // Arc goes from left (180°) to right (0°) — needle base at center (150,170)
+  // needle tip is UP by default at (150,52), so rotate -90 + score/100 * 180
   const deg = -90 + (score / 100) * 180;
   needle.style.transform = `rotate(${deg}deg)`;
   needle.style.transformOrigin = '150px 170px';
