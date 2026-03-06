@@ -900,9 +900,13 @@ function calcScore(alerts, city, durMin) {
 }
 
 function fmtSec(s) {
-  if (s > 86400*3) return '>72ש׳';
-  if (s >= 3600) return `${(s/3600).toFixed(1)}ש׳`;
-  if (s >= 60)   return `${Math.round(s/60)}דק׳`;
+  if (s > 86400*3) return '>3 ימים';
+  if (s >= 3600) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return `${h}:${String(m).padStart(2,'0')}`;
+  }
+  if (s >= 60) return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
   return `${Math.round(s)}ש`;
 }
 
