@@ -377,7 +377,7 @@ header {
 }
 .la-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
 }
 .la-field { display: flex; flex-direction: column; gap: 5px; text-align: right; }
@@ -800,6 +800,10 @@ footer {
         <div class="la-val" id="la-city">—</div>
       </div>
       <div class="la-field">
+        <div class="la-label">סוג אזעקה</div>
+        <div class="la-val" id="la-threat">—</div>
+      </div>
+      <div class="la-field">
         <div class="la-label">תאריך ושעה</div>
         <div class="la-val" id="la-time">—</div>
       </div>
@@ -1017,6 +1021,17 @@ function renderScore(d) {
   // Last alert card — filtered by city if selected, otherwise all national alerts
   const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
   const last = src.length ? src.reduce((a,b) => a.time > b.time ? a : b) : null;
+const THREAT_TYPES = {
+  0: 'ירי רקטות וטילים',
+  1: 'אירוע חומרים מסוכנים',
+  2: 'רעידת אדמה',
+  3: 'פצצה לא מתפוצצת',
+  4: 'צונאמי',
+  5: 'חדירת כלי טיס עוין',
+  6: 'חדירת מחבלים',
+  7: 'אירוע רדיולוגי',
+};
+
   if (last) {
     const cityDisplay = selCity || (last.cities||[]).join(', ') || '—';
     const alertTime = new Date(last.time * 1000).toLocaleString('he-IL', {
@@ -1024,9 +1039,10 @@ function renderScore(d) {
       hour:'2-digit', minute:'2-digit'
     });
     const ago = fmtSec(Date.now()/1000 - last.time);
-    document.getElementById('la-city').textContent = cityDisplay;
-    document.getElementById('la-time').textContent = alertTime;
-    document.getElementById('la-ago').textContent  = ago;
+    document.getElementById('la-city').textContent   = cityDisplay;
+    document.getElementById('la-threat').textContent = THREAT_TYPES[last.threat] || 'לא ידוע';
+    document.getElementById('la-time').textContent   = alertTime;
+    document.getElementById('la-ago').textContent    = ago;
   }
 }
 
