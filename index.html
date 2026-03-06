@@ -333,9 +333,36 @@ header {
 .lvl-warn   { --lvl-color: rgba(255,176,32,0.06); }
 .lvl-danger { --lvl-color: rgba(255,61,87,0.07);  }
 
-/* ══════════════════════════════════════════════
-   DIVIDER
-══════════════════════════════════════════════ */
+/* ── Duration intro (above gauge) ── */
+.duration-intro {
+  padding: 28px 0 20px;
+  border-bottom: 1px solid var(--line2);
+  margin-bottom: 24px;
+  text-align: center;
+}
+.duration-intro-title {
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 700;
+  color: var(--fg);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.duration-intro-sub {
+  font-size: 13px;
+  color: var(--fg2);
+  margin-bottom: 18px;
+  line-height: 1.6;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.duration-intro .pills {
+  justify-content: center;
+}
+.duration-intro .pill {
+  font-size: 13px;
+  padding: 9px 18px;
+}
 .divider {
   display: flex; align-items: center; gap: 12px;
   margin: 28px 0 16px;
@@ -573,12 +600,13 @@ footer {
 .fade-in { animation: fade-up .4s ease both; }
 
 #app > * { opacity: 0; animation: fade-up .5s ease forwards; }
-#app .hero          { animation-delay: .05s; }
-#app .divider       { animation-delay: .12s; }
-#app .controls-grid { animation-delay: .18s; }
-#app .stats-row     { animation-delay: .24s; }
-#app .tl-panel      { animation-delay: .30s; }
-#app .how-panel     { animation-delay: .36s; }
+#app .duration-intro { animation-delay: .02s; }
+#app .hero          { animation-delay: .10s; }
+#app .divider       { animation-delay: .18s; }
+#app .ctrl-panel    { animation-delay: .22s; }
+#app .stats-row     { animation-delay: .28s; }
+#app .tl-panel      { animation-delay: .34s; }
+#app .how-panel     { animation-delay: .40s; }
 
 /* ══════════════════════════════════════════════
    RESPONSIVE
@@ -615,6 +643,21 @@ footer {
 
 <!-- ── APP ── -->
 <div id="app" style="display:none">
+
+  <!-- DURATION PICKER — above gauge -->
+  <div class="duration-intro">
+    <div class="duration-intro-title">כמה זמן לא תוכל להגיע לממ"ד?</div>
+    <div class="duration-intro-sub">בחר את משך הפעילות הרצויה — המערכת תחשב עבורך את הסיכוי לאזעקה בזמן הזה</div>
+    <div class="pills" id="pills">
+      <div class="pill" data-min="5">5 דק׳</div>
+      <div class="pill on" data-min="10">10 דק׳</div>
+      <div class="pill" data-min="15">15 דק׳</div>
+      <div class="pill" data-min="20">20 דק׳</div>
+      <div class="pill" data-min="30">30 דק׳</div>
+      <div class="pill" data-min="45">45 דק׳</div>
+      <div class="pill" data-min="60">שעה</div>
+    </div>
+  </div>
 
   <!-- HERO GAUGE -->
   <div class="hero" id="hero-section">
@@ -726,34 +769,18 @@ footer {
     <div id="sc-bar" style="display:none"></div>
   </div>
 
-  <!-- DIVIDER -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">הגדרות</div><div class="divider-line"></div></div>
-
-  <!-- CONTROLS -->
-  <div class="controls-grid">
-    <div class="ctrl-panel">
-      <div class="ctrl-lbl">// משך הפעילות</div>
-      <div class="pills" id="pills">
-        <div class="pill" data-min="5">5 דק׳</div>
-        <div class="pill on" data-min="10">10 דק׳</div>
-        <div class="pill" data-min="15">15 דק׳</div>
-        <div class="pill" data-min="20">20 דק׳</div>
-        <div class="pill" data-min="30">30 דק׳</div>
-        <div class="pill" data-min="45">45 דק׳</div>
-        <div class="pill" data-min="60">שעה</div>
-      </div>
+  <!-- CITY PICKER -->
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">סינון לפי עיר</div><div class="divider-line"></div></div>
+  <div class="ctrl-panel">
+    <div class="ctrl-lbl">// עיר <span style="text-transform:none;letter-spacing:0;color:var(--fg3);font-size:9px">— ריק = כל הארץ</span></div>
+    <div class="city-wrap">
+      <input class="city-inp" id="city-input"
+        type="text" placeholder="הקלד שם עיר..."
+        autocomplete="off" list="city-dl">
+      <span class="city-icon" id="city-status"></span>
+      <datalist id="city-dl"></datalist>
     </div>
-    <div class="ctrl-panel">
-      <div class="ctrl-lbl">// עיר <span style="text-transform:none;letter-spacing:0;color:var(--fg3);font-size:9px">— ריק = כל הארץ</span></div>
-      <div class="city-wrap">
-        <input class="city-inp" id="city-input"
-          type="text" placeholder="הקלד שם עיר..."
-          autocomplete="off" list="city-dl">
-        <span class="city-icon" id="city-status"></span>
-        <datalist id="city-dl"></datalist>
-      </div>
-      <div class="city-msg" id="city-msg"></div>
-    </div>
+    <div class="city-msg" id="city-msg"></div>
   </div>
 
   <!-- DIVIDER -->
