@@ -261,13 +261,10 @@ async function pFetch(url) {
   return r.json();
 }
 async function fetchAll() {
-  const pages = [];
-  for (let offset = 0; offset < 200; offset += 50) {
-    const page = await pFetch(`${HISTORY_URL}?offset=${offset}`);
-    if (!page || page.length === 0) break;
-    pages.push(...page);
-    if (page.length < 50) break;
-  }
+  // The CORS proxy always returns the same latest 50 events regardless of offset,
+  // so we just fetch once.
+  const page = await pFetch(HISTORY_URL);
+  const pages = (page && page.length) ? page : [];
   try {
     const live = await pFetch(LIVE_URL);
     if (live && live.length) pages.unshift({ id:'live', alerts:live });
