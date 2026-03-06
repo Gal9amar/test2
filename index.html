@@ -205,8 +205,13 @@ footer { border-top:1.5px solid var(--border); padding:18px 0; font-family:var(-
       </div>
       <div>
         <div class="field-label">עיר <small>— ריק = כל הארץ</small></div>
-        <input class="city-input" id="city-input" type="text"
-          placeholder="הקלד שם עיר..." autocomplete="off" list="city-dl">
+        <div style="position:relative">
+          <input class="city-input" id="city-input" type="text"
+            placeholder="הקלד שם עיר..." autocomplete="off" list="city-dl"
+            style="padding-left:36px">
+          <span id="city-status" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none"></span>
+        </div>
+        <div id="city-msg" style="font-size:11px;font-family:var(--mono);margin-top:6px;min-height:16px"></div>
         <datalist id="city-dl"></datalist>
       </div>
     </div>
@@ -449,7 +454,37 @@ document.getElementById('pills').addEventListener('click', e => {
 
 document.getElementById('city-input').addEventListener('input', e => {
   const v = e.target.value.trim();
-  selCity = Object.keys(cityCounts).includes(v) ? v : '';
+  const known = Object.keys(cityCounts);
+  const statusEl = document.getElementById('city-status');
+  const msgEl    = document.getElementById('city-msg');
+
+  if (!v) {
+    selCity = '';
+    statusEl.textContent = '';
+    msgEl.textContent = '';
+    msgEl.style.color = '';
+  } else if (known.includes(v)) {
+    selCity = v;
+    statusEl.textContent = '✅';
+    const cnt = cityCounts[v];
+    msgEl.textContent = `✓ נמצא — ${cnt} התרעות ב-48 שעות האחרונות`;
+    msgEl.style.color = 'var(--safe)';
+  } else {
+    // Partial match suggestions
+    selCity = '';
+    statusEl.textContent = '❓';
+    const suggestions = known.filter(n => n.includes(v)).slice(0, 3);
+    if (suggestions.length) {
+      msgEl.innerHTML = `עיר לא נמצאה. האם התכוונת ל: ${suggestions.map(s =>
+        `<span style="cursor:pointer;text-decoration:underline" onclick="document.getElementById('city-input').value='${s}';document.getElementById('city-input').dispatchEvent(new Event('input'))">${s}</span>`
+      ).join(' / ')}?`;
+      msgEl.style.color = 'var(--warn)';
+    } else {
+      msgEl.textContent = 'עיר לא נמצאה בנתונים — מוצג ממוצע כל הארץ';
+      msgEl.style.color = 'var(--muted)';
+    }
+  }
+
   document.getElementById('sc-city').textContent = selCity || 'כל הארץ';
   if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur));
 });
