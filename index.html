@@ -933,7 +933,8 @@ footer {
     <button class="range-btn on" data-sec="86400">24 שעות</button>
     <button class="range-btn" data-sec="172800">48 שעות</button>
     <button class="range-btn" data-sec="604800">שבוע</button>
-    <button class="range-btn" data-from="1772229600">מ-28/2</button>
+    <button class="range-btn" data-from="1772229600">שאגת הארי</button>
+    <button class="range-btn" data-from="1749765600" data-to="1750802399">כלביא</button>
   </div>
 
   <!-- STATS -->
@@ -994,8 +995,9 @@ let cityCounts     = {};
 let selDur         = 10;
 let selCity        = '';
 let selStartOffset = 0;
-let selRange       = 86400; // seconds, or 0 if selFrom is used
-let selFrom        = 0;    // fixed unix timestamp (0 = use selRange)
+let selRange       = 86400;
+let selFrom        = 0;
+let selTo          = 0;    // fixed end timestamp (0 = now)
 let citiesInit     = false;
 
 async function pFetch(url) {
@@ -1023,13 +1025,11 @@ async function fetchHistorical() {
   }
 }
 
-// Returns alerts filtered to selRange seconds or selFrom fixed timestamp
 function getAlertsInRange(rangeSec) {
-  const cutoff = selFrom > 0
-    ? selFrom
-    : Date.now() / 1000 - rangeSec;
+  const cutoff = selFrom > 0 ? selFrom : Date.now() / 1000 - rangeSec;
+  const ceiling = selTo > 0 ? selTo : Infinity;
   const base = historicalLoaded ? allHistorical : allAlerts;
-  return base.filter(a => a.time >= cutoff);
+  return base.filter(a => a.time >= cutoff && a.time <= ceiling);
 }
 
 async function fetchAlerts() {
@@ -1188,7 +1188,8 @@ function renderScore(d) {
   document.getElementById('st-24h').textContent   = cnt24;
 
   // Threat type counts — filtered by selRange and city
-  const rangeLabel = selFrom > 0 ? 'מ-28/2' :
+  const rangeLabel = selFrom > 0 && selTo > 0 ? 'כלביא' :
+                     selFrom > 0 ? 'שאגת הארי' :
                      selRange === 86400 ? '24ש׳' : selRange === 172800 ? '48ש׳' :
                      selRange === 604800 ? 'שבוע' : `${selRange/86400}י׳`;
   const cutoff = Date.now() / 1000 - selRange;
@@ -1390,9 +1391,11 @@ document.getElementById('range-row').addEventListener('click', e => {
   b.classList.add('on');
   if (b.dataset.from) {
     selFrom  = parseInt(b.dataset.from);
+    selTo    = b.dataset.to ? parseInt(b.dataset.to) : 0;
     selRange = 0;
   } else {
     selFrom  = 0;
+    selTo    = 0;
     selRange = parseInt(b.dataset.sec);
   }
   if (getAlertsInRange(selRange).length)
