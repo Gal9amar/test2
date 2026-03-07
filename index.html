@@ -1094,12 +1094,8 @@ footer {
   <div class="divider"><div class="divider-line"></div><div class="divider-txt">ערים מותקפות</div><div class="divider-line"></div></div>
   <div class="panel-box" id="top-cities"></div>
 
-  <!-- MAP -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">מפת התרעות</div><div class="divider-line"></div></div>
-  <div class="map-wrap"><div id="heat-map"></div></div>
-
   <!-- SHARE -->
-  <button class="share-btn" id="share-btn" onclick="shareLink()">🔗 שתף קישור</button>
+  <button class="share-btn" id="share-btn" onclick="shareLink()">🔗 שתף את האתר</button>
 
 </div><!-- #app -->
 
@@ -1723,7 +1719,7 @@ function renderMap(alerts) {
   });
 }
 
-// ── Share link ──
+// ── Share ──
 function shareLink() {
   const params = new URLSearchParams();
   if (selCity) params.set('city', selCity);
@@ -1732,12 +1728,17 @@ function shareLink() {
   if (selRange && !selFrom) params.set('range', selRange);
   params.set('dur', selDur);
   const url = location.origin + location.pathname + (params.toString() ? '?' + params.toString() : '');
-  navigator.clipboard.writeText(url).then(() => {
-    const btn = document.getElementById('share-btn');
-    btn.textContent = '✅ הקישור הועתק!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = '🔗 שתף קישור'; btn.classList.remove('copied'); }, 2500);
-  });
+
+  if (navigator.share) {
+    navigator.share({ title: 'זמן בטוח — מעקב התרעות', url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('share-btn');
+      btn.textContent = '✅ הקישור הועתק!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '🔗 שתף את האתר'; btn.classList.remove('copied'); }, 2500);
+    });
+  }
 }
 
 // ── Read URL params on load ──
