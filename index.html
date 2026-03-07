@@ -567,18 +567,20 @@ header {
   background: rgba(255,255,255,0.05);
 }
 .city-inp::placeholder { color: var(--fg3); }
-.city-clear {
-  position: absolute; left: 10px; top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255,255,255,0.1);
-  border: none; border-radius: 50%;
-  width: 20px; height: 20px;
-  font-size: 11px; line-height: 1;
-  color: var(--fg2); cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background .15s, color .15s;
+.city-clear-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  padding: 6px 12px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .5px;
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color .15s, background .15s;
 }
-.city-clear:hover { background: rgba(255,255,255,0.2); color: var(--fg); }
+.city-clear-btn:hover { border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.06); }
 .city-icon {
   position: absolute; left: 12px; top: 50%;
   transform: translateY(-50%);
@@ -827,13 +829,15 @@ footer {
     <div class="duration-intro-sub">בחר את משך הפעילות הרצויה — המערכת תחשב עבורך את הסיכוי לאזעקה בזמן הזה</div>
 
     <!-- CITY PICKER -->
-    <div class="city-wrap" style="margin-bottom:10px">
-      <input class="city-inp" id="city-input"
-        type="text" placeholder="🔍 סינון לפי עיר — ריק = כל הארץ"
-        autocomplete="off" list="city-dl">
-      <span class="city-icon" id="city-status"></span>
-      <button class="city-clear" id="city-clear" onclick="clearCity()" style="display:none">✕</button>
-      <datalist id="city-dl"></datalist>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div class="city-wrap" style="flex:1;margin-bottom:0">
+        <input class="city-inp" id="city-input"
+          type="text" placeholder="🔍 סינון לפי עיר — ריק = כל הארץ"
+          autocomplete="off" list="city-dl">
+        <span class="city-icon" id="city-status"></span>
+        <datalist id="city-dl"></datalist>
+      </div>
+      <button class="city-clear-btn" id="city-clear" onclick="clearCity()" style="display:none">נקה</button>
     </div>
     <div class="city-msg" id="city-msg"></div>
 
