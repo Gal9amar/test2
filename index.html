@@ -808,6 +808,20 @@ footer {
 <!-- ── APP ── -->
 <div id="app" style="display:none">
 
+  <!-- CITY PICKER -->
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">סינון לפי עיר</div><div class="divider-line"></div></div>
+  <div class="ctrl-panel">
+    <div class="ctrl-lbl">// עיר <span style="text-transform:none;letter-spacing:0;color:var(--fg3);font-size:9px">— ריק = כל הארץ</span></div>
+    <div class="city-wrap">
+      <input class="city-inp" id="city-input"
+        type="text" placeholder="הקלד שם עיר..."
+        autocomplete="off" list="city-dl">
+      <span class="city-icon" id="city-status"></span>
+      <datalist id="city-dl"></datalist>
+    </div>
+    <div class="city-msg" id="city-msg"></div>
+  </div>
+
   <!-- DURATION PICKER — above gauge -->
   <div class="duration-intro">
     <div class="duration-now" id="duration-now"></div>
@@ -928,20 +942,6 @@ footer {
 
     <!-- hidden compat -->
     <div id="sc-bar" style="display:none"></div>
-  </div>
-
-  <!-- CITY PICKER -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">סינון לפי עיר</div><div class="divider-line"></div></div>
-  <div class="ctrl-panel">
-    <div class="ctrl-lbl">// עיר <span style="text-transform:none;letter-spacing:0;color:var(--fg3);font-size:9px">— ריק = כל הארץ</span></div>
-    <div class="city-wrap">
-      <input class="city-inp" id="city-input"
-        type="text" placeholder="הקלד שם עיר..."
-        autocomplete="off" list="city-dl">
-      <span class="city-icon" id="city-status"></span>
-      <datalist id="city-dl"></datalist>
-    </div>
-    <div class="city-msg" id="city-msg"></div>
   </div>
 
   <!-- LAST ALERT -->
