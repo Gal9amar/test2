@@ -641,7 +641,7 @@ header {
 ══════════════════════════════════════════════ */
 .hh-chart {
   display: flex; align-items: flex-end;
-  gap: 3px; height: 90px; margin-bottom: 6px;
+  gap: 3px; height: 110px; margin-bottom: 2px;
 }
 .hh-col {
   flex: 1; display: flex; flex-direction: column;
@@ -667,6 +667,16 @@ header {
 .hh-col:hover .hh-bar { opacity: 1; }
 .hh-bar.peak { background: var(--danger); opacity: 0.85; }
 .hh-bar.warm { background: var(--warn); opacity: 0.75; }
+.hh-cnt {
+  font-family: var(--mono); font-size: 8px;
+  color: var(--fg2); line-height: 1.3;
+  min-height: 11px; text-align: center;
+}
+.hh-hlbl {
+  font-family: var(--mono); font-size: 7px;
+  color: var(--fg3); line-height: 1.2;
+  text-align: center;
+}
 .hh-labels {
   display: flex; justify-content: space-between;
   font-family: var(--mono); font-size: 9px;
@@ -1085,13 +1095,10 @@ footer {
   <div class="divider"><div class="divider-line"></div><div class="divider-txt">שעות חמות</div><div class="divider-line"></div></div>
   <div class="panel-box">
     <div class="hh-chart" id="hh-chart"></div>
-    <div class="hh-labels">
-      <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
-    </div>
   </div>
 
   <!-- TOP 5 CITIES -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">ערים מותקפות</div><div class="divider-line"></div></div>
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">5 ערים המובילות בכמות האזעקות</div><div class="divider-line"></div></div>
   <div class="panel-box" id="top-cities"></div>
 
   <!-- SHARE -->
@@ -1648,8 +1655,8 @@ function renderHotHours(alerts) {
   const src = selCity ? alerts.filter(a => (a.cities||[]).includes(selCity)) : alerts;
   const counts = new Array(24).fill(0);
   src.forEach(a => {
-    const h = new Date(a.time * 1000).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',hour12:false});
-    const hr = parseInt(h); if (hr >= 0 && hr < 24) counts[hr]++;
+    const hr = new Date(a.time * 1000).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',hour12:false});
+    const h = parseInt(hr); if (h >= 0 && h < 24) counts[h]++;
   });
   const maxC = Math.max(...counts, 1);
   const chart = document.getElementById('hh-chart');
@@ -1661,7 +1668,9 @@ function renderHotHours(alerts) {
     col.className = 'hh-col';
     col.innerHTML = `
       <span class="hh-tip">${String(h).padStart(2,'0')}:00 — ${c} התרעות</span>
-      <div class="hh-bar ${cls}" style="height:${Math.max(pct,2)}%"></div>`;
+      <div class="hh-bar ${cls}" style="height:${Math.max(pct,2)}%"></div>
+      <span class="hh-cnt">${c > 0 ? c : ''}</span>
+      <span class="hh-hlbl">${String(h).padStart(2,'0')}</span>`;
     chart.appendChild(col);
   });
 }
