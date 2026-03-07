@@ -69,12 +69,6 @@ body::after {
 }
 
 /* ══════ LAYOUT ══════ */
-.wrap-city {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 0 16px 4px;
-}
-
 .wrap {
   max-width: 740px;
   margin: 0 auto;
@@ -1249,11 +1243,10 @@ function renderScore(d) {
   document.getElementById('st-24h-l').innerHTML = `התרעות<br>${cntLabel}`;
 
   // Threat type counts — filtered by selRange and city
-  const rangeLabel = selFrom > 0 && selTo > 0 ? 'כלביא' :
+  const rangeLabel = selFrom > 0 && selTo > 0 ? 'עם כלביא' :
                      selFrom > 0 ? 'שאגת הארי' :
                      selRange === 86400 ? '24ש׳' : selRange === 172800 ? '48ש׳' :
                      selRange === 604800 ? 'שבוע' : `${selRange/86400}י׳`;
-  const cutoff = Date.now() / 1000 - selRange;
   const srcAll = selCity
     ? getAlertsInRange(selRange).filter(a => (a.cities||[]).includes(selCity))
     : getAlertsInRange(selRange);
@@ -1266,8 +1259,9 @@ function renderScore(d) {
   const ctx = selCity ? `ב${selCity}` : 'ממוצע ארצי';
   document.getElementById('st-since-l').innerHTML = `זמן שעבר מהאזעקה<br>האחרונה · ${ctx}`;
 
-  // Last alert card — filtered by city if selected, otherwise all national alerts
-  const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
+  // Last alert card — uses full history for most recent, filtered by city
+  const allSrc = historicalLoaded ? allHistorical : allAlerts;
+  const src = selCity ? allSrc.filter(a => (a.cities||[]).includes(selCity)) : allSrc;
   const last = src.length ? src.reduce((a,b) => a.time > b.time ? a : b) : null;
 const THREAT_TYPES = {
   0: 'ירי רקטות וטילים',
@@ -1393,10 +1387,11 @@ function applyTimeInput(val, hint) {
     ? `בעוד ${diffH} שעות${diffM > 0 ? ` ו-${diffM} דקות` : ''}`
     : `בעוד ${diffM} דקות`;
 
-  // Historical note: count alerts in same ±1h window from past days
+  // Historical note: count alerts in same ±1h window from full history
   const noteEl = document.getElementById('when-history-note');
-  if (noteEl && allAlerts.length) {
-    const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
+  if (noteEl) {
+    const histSrc = historicalLoaded ? allHistorical : allAlerts;
+    const src = selCity ? histSrc.filter(a => (a.cities||[]).includes(selCity)) : histSrc;
     const window = src.filter(a => {
       const ah = new Date(a.time * 1000).getHours();
       return Math.abs(ah - h) <= 1;
@@ -1408,9 +1403,9 @@ function applyTimeInput(val, hint) {
     const total = window.length;
     const cityCtx = selCity ? `ב${selCity}` : 'בכל הארץ';
     if (total === 0) {
-      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 לא נרשמו התרעות ${cityCtx} ב-48 השעות האחרונות`;
+      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 לא נרשמו התרעות ${cityCtx} בהיסטוריה`;
     } else {
-      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 נרשמו ${total} התרעות ${cityCtx} ב-${days} יום${days !== 1 ? 'ים' : ''} האחרונים`;
+      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 נרשמו ${total} התרעות ${cityCtx} ב-${days} יום${days !== 1 ? 'ים' : ''} שונים`;
     }
   }
 
@@ -1462,9 +1457,9 @@ document.getElementById('city-input').addEventListener('input', e => {
     selCity = v;
     statusEl.textContent = '✅';
     // Compute city-specific stats
-    const cityAlerts = allAlerts.filter(a => (a.cities||[]).includes(v));
-    const count48 = cityCounts[v] || 0;
     const now = Date.now() / 1000;
+    const cityAlerts = (historicalLoaded ? allHistorical : allAlerts).filter(a => (a.cities||[]).includes(v));
+    const count48 = cityAlerts.filter(a => a.time >= now - 172800).length;
     const count24 = cityAlerts.filter(a => a.time >= now - 86400).length;
     const times = cityAlerts.map(a => a.time).sort((a,b) => b-a);
     const sinceStr = times.length
@@ -1502,38 +1497,6 @@ document.getElementById('city-input').addEventListener('input', e => {
 
 update();
 setInterval(update, REFRESH);
-
-// ── City coordinates (major Israeli cities) ──
-const CITY_COORDS = {
-  'תל אביב - יפו':[32.0853,34.7818],'ירושלים':[31.7683,35.2137],'חיפה':[32.7940,34.9896],
-  'ראשון לציון':[31.9730,34.7925],'פתח תקווה':[32.0840,34.8878],'אשדוד':[31.8040,34.6553],
-  'נתניה':[32.3215,34.8532],'באר שבע':[31.2518,34.7913],'בני ברק':[32.0840,34.8337],
-  'חולון':[32.0114,34.7740],'רמת גן':[32.0706,34.8235],'אשקלון':[31.6688,34.5743],
-  'רחובות':[31.8928,34.8113],'בת ים':[32.0236,34.7503],'הרצליה':[32.1657,34.8438],
-  'כפר סבא':[32.1781,34.9077],'מודיעין-מכבים-רעות':[31.8986,35.0104],'חדרה':[32.4343,34.9195],
-  'לוד':[31.9515,34.8953],'רמלה':[31.9271,34.8737],'נהריה':[33.0046,35.0982],
-  'נצרת':[32.6996,35.3035],'עכו':[32.9289,35.0786],'עפולה':[32.6057,35.2897],
-  'אילת':[29.5577,34.9519],'טבריה':[32.7940,35.5309],'צפת':[32.9641,35.4954],
-  'קריית שמונה':[33.2074,35.5681],'שדרות':[31.5246,34.5965],'נתיבות':[31.4189,34.5893],
-  'אופקים':[31.3143,34.6212],'דימונה':[31.0694,35.0321],'ירוחם':[30.9868,34.9274],
-  'מצפה רמון':[30.6106,34.8016],'קריית גת':[31.6097,34.7642],'קריית מלאכי':[31.7266,34.7397],
-  'יבנה':[31.8783,34.7417],'גדרה':[31.8119,34.7757],'רהט':[31.3917,34.7546],
-  'כרמיאל':[32.9147,35.3011],'מגדל העמק':[32.6773,35.2383],'טירת כרמל':[32.7601,34.9700],
-  'קריית ביאליק':[32.8372,35.0893],'קריית ים':[32.8449,35.0699],'קריית אתא':[32.8075,35.1127],
-  'קריית מוצקין':[32.8333,35.0747],'נשר':[32.7760,35.0348],'זכרון יעקב':[32.5710,34.9496],
-  'פרדס חנה-כרכור':[32.4693,34.9726],'בית שאן':[32.4963,35.4987],'חצור הגלילית':[33.0189,35.5548],
-  'ערד':[31.2591,35.2135],'קצרין':[32.9941,35.6899],
-  'שלומי':[33.0700,35.1427],'נהריה':[33.0046,35.0982],'מעלות-תרשיחא':[33.0158,35.2717],
-  'חניתה':[33.0926,35.1776],'יערה':[33.0791,35.1598],'שתולה':[33.0786,35.2112],
-  'מצובה':[33.0520,35.1563],'ערב אל עראמשה':[33.0700,35.1800],
-};
-
-function coordsForCity(name) {
-  if (CITY_COORDS[name]) return CITY_COORDS[name];
-  // fuzzy: try prefix match
-  const k = Object.keys(CITY_COORDS).find(c => c.startsWith(name.slice(0,4)));
-  return k ? CITY_COORDS[k] : null;
-}
 
 // ── Hot Hours chart ──
 function renderHotHours(alerts) {
