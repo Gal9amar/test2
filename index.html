@@ -860,18 +860,18 @@ footer {
     <div class="range-section">
       <div class="range-label-title">ממוצע אזעקות לפי:</div>
       <div class="range-row" id="range-row">
-        <button class="range-btn on" data-sec="86400">24 שעות</button>
+        <button class="range-btn" data-sec="86400">24 שעות</button>
         <button class="range-btn" data-sec="172800">48 שעות</button>
         <button class="range-btn" data-sec="604800">שבוע</button>
         <button class="range-btn" data-from="1772229600">שאגת הארי</button>
-        <button class="range-btn" data-from="1749765600" data-to="1750802399">עם כלביא</button>
+        <button class="range-btn on" data-from="1749765600" data-to="1750802399">עם כלביא</button>
       </div>
     </div>
 
     <div class="range-label-title" style="margin-bottom:8px">זמן פעילות מתוכננת:</div>
     <div class="pills" id="pills">
-      <div class="pill" data-min="5">5 דק׳</div>
-      <div class="pill on" data-min="10">10 דק׳</div>
+      <div class="pill on" data-min="5">5 דק׳</div>
+      <div class="pill" data-min="10">10 דק׳</div>
       <div class="pill" data-min="15">15 דק׳</div>
       <div class="pill" data-min="20">20 דק׳</div>
       <div class="pill" data-min="30">30 דק׳</div>
@@ -1061,12 +1061,12 @@ let allAlerts      = [];  // live ~48h
 let allHistorical  = [];  // full history from 2021
 let historicalLoaded = false;
 let cityCounts     = {};
-let selDur         = 10;
+let selDur         = 5;
 let selCity        = '';
 let selStartOffset = 0;
-let selRange       = 86400;
-let selFrom        = 0;
-let selTo          = 0;    // fixed end timestamp (0 = now)
+let selRange       = 0;
+let selFrom        = 1749765600;
+let selTo          = 1750802399;
 let citiesInit     = false;
 
 async function pFetch(url) {
