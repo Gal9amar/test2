@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>זמן בטוח · מערכת מעקב התרעות</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Heebo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ══════════════════════════════════════════════
    VARIABLES
@@ -732,17 +730,6 @@ header {
 .share-btn.copied { border-color: var(--safe); color: var(--safe); }
 
 /* ══════════════════════════════════════════════
-   MAP
-══════════════════════════════════════════════ */
-.map-wrap {
-  border-radius: 10px; overflow: hidden;
-  border: 1px solid var(--line);
-  margin-bottom: 14px;
-  height: 480px;
-}
-#heat-map { width: 100%; height: 100%; }
-
-/* ══════════════════════════════════════════════
    TIMELINE
 ══════════════════════════════════════════════ */
 .tl-panel {
@@ -1446,7 +1433,6 @@ async function update() {
     renderTimeline(getAlertsInRange(selRange));
     renderHotHours(getAlertsInRange(selRange));
     renderTopCities(getAlertsInRange(selRange));
-    renderMap(getAlertsInRange(selRange));
 
     const isFirstLoad = document.getElementById('app').style.display === 'none';
     document.getElementById('loading').style.display = 'none';
@@ -1551,7 +1537,6 @@ document.getElementById('range-row').addEventListener('click', e => {
   renderTimeline(getAlertsInRange(selRange));
   renderHotHours(getAlertsInRange(selRange));
   renderTopCities(getAlertsInRange(selRange));
-  renderMap(getAlertsInRange(selRange));
 });
 
 document.getElementById('pills').addEventListener('click', e => {
@@ -1611,7 +1596,6 @@ document.getElementById('city-input').addEventListener('input', e => {
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
     renderHotHours(getAlertsInRange(selRange));
     renderTopCities(getAlertsInRange(selRange));
-    renderMap(getAlertsInRange(selRange));
   }
 });
 
@@ -1689,43 +1673,6 @@ function renderTopCities(alerts) {
       <div class="tc-bar-wrap"><div class="tc-bar" style="width:${(cnt/maxV)*100}%"></div></div>
       <span class="tc-count">${cnt}</span>
     </div>`).join('');
-}
-
-// ── Map ──
-let leafletMap = null;
-let mapCircles = [];
-
-function renderMap(alerts) {
-  if (!leafletMap) {
-    leafletMap = L.map('heat-map', { zoomControl: true, attributionControl: false })
-      .setView([31.5, 35.0], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 13
-    }).addTo(leafletMap);
-    // Fit to Israel bounds
-    leafletMap.fitBounds([[29.4, 34.2], [33.4, 35.9]]);
-  }
-  mapCircles.forEach(c => c.remove());
-  mapCircles = [];
-
-  const counts = {};
-  alerts.forEach(a => (a.cities||[]).forEach(c => { counts[c] = (counts[c]||0) + 1; }));
-  const maxV = Math.max(...Object.values(counts), 1);
-
-  Object.entries(counts).forEach(([name, cnt]) => {
-    const coords = coordsForCity(name);
-    if (!coords) return;
-    const ratio = cnt / maxV;
-    const radius = 2000 + ratio * 22000;
-    const color  = ratio >= 0.7 ? '#ff3d57' : ratio >= 0.35 ? '#ffb020' : '#00e5a0';
-    const circle = L.circle(coords, {
-      radius, color, fillColor: color,
-      fillOpacity: 0.25 + ratio * 0.35,
-      weight: 1, opacity: 0.7
-    }).bindTooltip(`${name}: ${cnt} התרעות`, { direction:'top', sticky:true });
-    circle.addTo(leafletMap);
-    mapCircles.push(circle);
-  });
 }
 
 // ── Share ──
