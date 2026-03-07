@@ -343,6 +343,13 @@ header {
 
 /* ── Duration intro (above gauge) ── */
 /* ── When picker ── */
+.range-section { margin-bottom: 14px; }
+.range-label-title {
+  font-family: var(--mono);
+  font-size: 10px; letter-spacing: 1px;
+  color: var(--fg3); text-transform: uppercase;
+  margin-bottom: 8px;
+}
 /* ── Range picker ── */
 .range-row {
   display: flex; gap: 8px; flex-wrap: wrap;
@@ -836,6 +843,18 @@ footer {
     <div class="duration-intro-title">אני מתכנן פעילות בזמן של</div>
     <div class="duration-intro-sub">בחר את משך הפעילות הרצויה — המערכת תחשב עבורך את הסיכוי לאזעקה בזמן הזה</div>
 
+    <!-- RANGE PICKER -->
+    <div class="range-section">
+      <div class="range-label-title">ממוצע אזעקות לפי:</div>
+      <div class="range-row" id="range-row">
+        <button class="range-btn on" data-sec="86400">24 שעות</button>
+        <button class="range-btn" data-sec="172800">48 שעות</button>
+        <button class="range-btn" data-sec="604800">שבוע</button>
+        <button class="range-btn" data-from="1772229600">שאגת הארי</button>
+        <button class="range-btn" data-from="1749765600" data-to="1750802399">עם כלביא</button>
+      </div>
+    </div>
+
     <!-- CITY PICKER -->
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
       <div class="city-wrap" style="flex:1;margin-bottom:0">
@@ -985,15 +1004,6 @@ footer {
 
   <!-- DIVIDER -->
   <div class="divider"><div class="divider-line"></div><div class="divider-txt">נתונים</div><div class="divider-line"></div></div>
-
-  <!-- RANGE PICKER -->
-  <div class="range-row" id="range-row">
-    <button class="range-btn on" data-sec="86400">24 שעות</button>
-    <button class="range-btn" data-sec="172800">48 שעות</button>
-    <button class="range-btn" data-sec="604800">שבוע</button>
-    <button class="range-btn" data-from="1772229600">שאגת הארי</button>
-    <button class="range-btn" data-from="1749765600" data-to="1750802399">עם כלביא</button>
-  </div>
 
   <!-- STATS -->
   <div class="stats-row">
