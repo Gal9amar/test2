@@ -720,59 +720,6 @@ header {
 .share-btn.copied { border-color: var(--safe); color: var(--safe); }
 
 /* ══════════════════════════════════════════════
-   TIMELINE
-══════════════════════════════════════════════ */
-.tl-panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 16px 14px 6px;
-  margin-bottom: 14px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.tl {
-  display: flex; align-items: flex-end; gap: 3px;
-  height: 140px; padding-bottom: 20px;
-  position: relative; min-width: 460px;
-}
-.tl-grid {
-  position: absolute; inset: 0 0 20px 0;
-  pointer-events: none;
-  display: flex; flex-direction: column; justify-content: space-between;
-}
-.tl-line { width: 100%; height: 1px; background: var(--line); }
-.tl-col {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; height: 100%; justify-content: flex-end;
-  cursor: pointer; position: relative;
-}
-.tl-col:hover .tl-bar { opacity: 1; }
-.tl-col:hover .tl-tip { opacity: 1; transform: translateY(0); }
-.tl-bar {
-  width: 100%; max-width: 17px; border-radius: 2px 2px 0 0;
-  background: rgba(90,106,128,0.6);
-  opacity: .5; animation: tl-grow .35s ease both;
-}
-.tl-bar.hot { background: var(--danger); opacity: .9; box-shadow: 0 0 6px var(--danger); }
-@keyframes tl-grow { from{transform:scaleY(0);transform-origin:bottom} to{transform:scaleY(1);transform-origin:bottom} }
-.tl-tip {
-  position: absolute; bottom: 115%;
-  background: var(--panelhi);
-  border: 1px solid var(--line2);
-  border-radius: 5px; padding: 3px 8px;
-  font-family: var(--mono); font-size: 9px; color: var(--fg);
-  opacity: 0; transform: translateY(5px); transition: all .15s;
-  white-space: nowrap; pointer-events: none; z-index: 10;
-  letter-spacing: .5px;
-}
-.tl-lbl {
-  position: absolute; bottom: 4px;
-  font-family: var(--mono); font-size: 8px; color: var(--fg2);
-  letter-spacing: .5px;
-}
-
-/* ══════════════════════════════════════════════
    HOW IT WORKS
 ══════════════════════════════════════════════ */
 .how-panel {
@@ -827,7 +774,6 @@ footer {
 #app .divider       { animation-delay: .18s; }
 #app .ctrl-panel    { animation-delay: .22s; }
 #app .stats-row     { animation-delay: .28s; }
-#app .tl-panel      { animation-delay: .34s; }
 #app .how-panel     { animation-delay: .40s; }
 
 /* ══════════════════════════════════════════════
@@ -1054,17 +1000,6 @@ footer {
     <div class="stat-box">
       <div class="stat-n" id="st-t5">—</div>
       <div class="stat-l" id="st-t5-l">חדירת כלי<br>טיס עוין ב-48ש׳</div>
-    </div>
-  </div>
-
-  <!-- TIMELINE -->
-  <div class="tl-panel">
-    <div class="tl" id="tl">
-      <div class="tl-grid">
-        <div class="tl-line"></div>
-        <div class="tl-line"></div>
-        <div class="tl-line"></div>
-      </div>
     </div>
   </div>
 
@@ -1356,31 +1291,6 @@ const THREAT_TYPES = {
   }
 }
 
-function renderTimeline(alerts) {
-  const now   = Date.now() / 1000;
-  const slots = 48;
-  const bktSz = 86400 / slots;
-  const counts = new Array(slots).fill(0);
-  alerts.filter(a => a.time > now - 86400).forEach(a => {
-    const i = Math.floor((now - a.time) / bktSz);
-    if (i >= 0 && i < slots) counts[i]++;
-  });
-  const maxC = Math.max(...counts, 1);
-  const tl = document.getElementById('tl');
-  [...tl.querySelectorAll('.tl-col')].forEach(c=>c.remove());
-  counts.forEach((c, i) => {
-    const pct = (c/maxC)*100;
-    const col = document.createElement('div');
-    col.className = 'tl-col';
-    const ageH = Math.round((slots-i)*30/60);
-    col.innerHTML = `
-      <span class="tl-tip">${c} התרעות</span>
-      <div class="tl-bar${i<3?' hot':''}" style="height:${Math.max(pct,2)}%;animation-delay:${i*.008}s"></div>
-      ${i%8===0?`<span class="tl-lbl">${i===0?'NOW':ageH+'H'}</span>`:''}`;
-    tl.appendChild(col);
-  });
-}
-
 function initCities() {
   if (citiesInit) return;
   citiesInit = true;
@@ -1420,7 +1330,6 @@ async function update() {
     });
 
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
-    renderTimeline(getAlertsInRange(selRange));
     renderHotHours(getAlertsInRange(selRange));
     renderTopCities(getAlertsInRange(selRange));
 
@@ -1524,7 +1433,6 @@ document.getElementById('range-row').addEventListener('click', e => {
   }
   if (getAlertsInRange(selRange).length)
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
-  renderTimeline(getAlertsInRange(selRange));
   renderHotHours(getAlertsInRange(selRange));
   renderTopCities(getAlertsInRange(selRange));
 });
