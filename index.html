@@ -567,6 +567,18 @@ header {
   background: rgba(255,255,255,0.05);
 }
 .city-inp::placeholder { color: var(--fg3); }
+.city-clear {
+  position: absolute; left: 10px; top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.1);
+  border: none; border-radius: 50%;
+  width: 20px; height: 20px;
+  font-size: 11px; line-height: 1;
+  color: var(--fg2); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.city-clear:hover { background: rgba(255,255,255,0.2); color: var(--fg); }
 .city-icon {
   position: absolute; left: 12px; top: 50%;
   transform: translateY(-50%);
@@ -820,6 +832,7 @@ footer {
         type="text" placeholder="🔍 סינון לפי עיר — ריק = כל הארץ"
         autocomplete="off" list="city-dl">
       <span class="city-icon" id="city-status"></span>
+      <button class="city-clear" id="city-clear" onclick="clearCity()" style="display:none">✕</button>
       <datalist id="city-dl"></datalist>
     </div>
     <div class="city-msg" id="city-msg"></div>
@@ -1434,8 +1447,17 @@ document.getElementById('pills').addEventListener('click', e => {
   if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
 });
 
+function clearCity() {
+  const inp = document.getElementById('city-input');
+  inp.value = '';
+  document.getElementById('city-clear').style.display = 'none';
+  inp.dispatchEvent(new Event('input'));
+  inp.focus();
+}
+
 document.getElementById('city-input').addEventListener('input', e => {
   const v = e.target.value.trim();
+  document.getElementById('city-clear').style.display = v ? 'flex' : 'none';
   const known = Object.keys(cityCounts);
   const statusEl = document.getElementById('city-status');
   const msgEl    = document.getElementById('city-msg');
