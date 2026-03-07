@@ -335,6 +335,31 @@ header {
 
 /* ── Duration intro (above gauge) ── */
 /* ── When picker ── */
+/* ── Range picker ── */
+.range-row {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.range-btn {
+  font-family: var(--mono);
+  font-size: 11px; letter-spacing: .5px;
+  padding: 5px 14px;
+  border-radius: 5px;
+  border: 1px solid var(--line2);
+  background: transparent;
+  color: var(--fg2);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.range-btn:hover { border-color: rgba(255,255,255,0.25); color: var(--fg); }
+.range-btn.on {
+  background: var(--safe);
+  border-color: var(--safe);
+  color: #000;
+  box-shadow: 0 0 10px rgba(0,229,160,0.3);
+}
+
 .when-wrap {
   margin-top: 16px;
   display: flex; flex-direction: column; align-items: center; gap: 12px;
@@ -903,6 +928,14 @@ footer {
   <!-- DIVIDER -->
   <div class="divider"><div class="divider-line"></div><div class="divider-txt">נתונים</div><div class="divider-line"></div></div>
 
+  <!-- RANGE PICKER -->
+  <div class="range-row" id="range-row">
+    <button class="range-btn on" data-sec="86400">24 שעות</button>
+    <button class="range-btn" data-sec="172800">48 שעות</button>
+    <button class="range-btn" data-sec="604800">שבוע</button>
+    <button class="range-btn" data-sec="2592000">חודש</button>
+  </div>
+
   <!-- STATS -->
   <div class="stats-row">
     <div class="stat-box">
@@ -919,11 +952,11 @@ footer {
     </div>
     <div class="stat-box">
       <div class="stat-n" id="st-t0">—</div>
-      <div class="stat-l">ירי רקטות<br>וטילים ב-48ש׳</div>
+      <div class="stat-l" id="st-t0-l">ירי רקטות<br>וטילים ב-48ש׳</div>
     </div>
     <div class="stat-box">
       <div class="stat-n" id="st-t5">—</div>
-      <div class="stat-l">חדירת כלי<br>טיס עוין ב-48ש׳</div>
+      <div class="stat-l" id="st-t5-l">חדירת כלי<br>טיס עוין ב-48ש׳</div>
     </div>
   </div>
 
@@ -948,22 +981,52 @@ footer {
 
 </div><!-- .wrap -->
 <script>
-const PROXY    = 'https://api.codetabs.com/v1/proxy/?quest=';
-const HIST_URL = 'https://api.tzevaadom.co.il/alerts-history/';
-const LIVE_URL = 'https://api.tzevaadom.co.il/notifications';
-const REFRESH  = 30000;
+const PROXY       = 'https://api.codetabs.com/v1/proxy/?quest=';
+const HIST_URL    = 'https://api.tzevaadom.co.il/alerts-history/';
+const LIVE_URL    = 'https://api.tzevaadom.co.il/notifications';
+const ALL_HIST_URL= 'https://www.tzevaadom.co.il/static/historical/all.json';
+const REFRESH     = 30000;
 
-let allAlerts  = [];
-let cityCounts = {};
-let selDur        = 10;
-let selCity       = '';
-let selStartOffset = 0; // seconds from now (0 = now, >0 = future)
-let citiesInit = false;
+let allAlerts      = [];  // live ~48h
+let allHistorical  = [];  // full history from 2021
+let historicalLoaded = false;
+let cityCounts     = {};
+let selDur         = 10;
+let selCity        = '';
+let selStartOffset = 0;
+let selRange       = 86400; // default 24h
+let citiesInit     = false;
 
 async function pFetch(url) {
   const r = await fetch(PROXY + encodeURIComponent(url));
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   return r.json();
+}
+
+async function fetchHistorical() {
+  if (historicalLoaded) return;
+  try {
+    const raw = await pFetch(ALL_HIST_URL);
+    // Format: [event_id, threat, [cities], timestamp]
+    allHistorical = raw.map(r => ({
+      time: r[3], threat: r[1], cities: r[2], isDrill: false
+    })).sort((a,b) => b.time - a.time);
+    historicalLoaded = true;
+    // Rebuild cityCounts with full history
+    allHistorical.forEach(a => (a.cities||[]).forEach(c => {
+      cityCounts[c] = (cityCounts[c] || 0) + 1;
+    }));
+    initCities();
+  } catch(e) {
+    console.warn('Historical data load failed:', e.message);
+  }
+}
+
+// Returns alerts filtered to selRange seconds, merging live + historical
+function getAlertsInRange(rangeSec) {
+  const cutoff = Date.now() / 1000 - rangeSec;
+  const base = historicalLoaded ? allHistorical : allAlerts;
+  return base.filter(a => a.time >= cutoff);
 }
 
 async function fetchAlerts() {
@@ -1121,12 +1184,17 @@ function renderScore(d) {
   document.getElementById('st-avg').textContent   = fmtSec(avgGap);
   document.getElementById('st-24h').textContent   = cnt24;
 
-  // Threat type counts (48h, city-filtered)
-  const now48 = Date.now() / 1000 - 172800;
-  const srcAll = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
-  const src48  = srcAll.filter(a => a.time >= now48);
-  document.getElementById('st-t0').textContent = src48.filter(a => a.threat === 0).length;
-  document.getElementById('st-t5').textContent = src48.filter(a => a.threat === 5).length;
+  // Threat type counts — filtered by selRange and city
+  const rangeLabel = selRange === 86400 ? '24ש׳' : selRange === 172800 ? '48ש׳' :
+                     selRange === 604800 ? 'שבוע' : 'חודש';
+  const cutoff = Date.now() / 1000 - selRange;
+  const srcAll = selCity
+    ? getAlertsInRange(selRange).filter(a => (a.cities||[]).includes(selCity))
+    : getAlertsInRange(selRange);
+  document.getElementById('st-t0').textContent = srcAll.filter(a => a.threat === 0).length;
+  document.getElementById('st-t5').textContent = srcAll.filter(a => a.threat === 5).length;
+  document.getElementById('st-t0-l').innerHTML = `ירי רקטות<br>וטילים · ${rangeLabel}`;
+  document.getElementById('st-t5-l').innerHTML = `חדירת כלי<br>טיס עוין · ${rangeLabel}`;
 
   // Update stat sublabels to reflect city/national context
   const ctx = selCity ? `ב${selCity}` : 'ממוצע ארצי';
@@ -1198,8 +1266,23 @@ function initCities() {
 async function update() {
   try {
     allAlerts = await fetchAlerts();
+
+    // Kick off historical load in background (first time only)
+    if (!historicalLoaded) fetchHistorical();
+
+    // Merge live alerts into historical for freshness
+    if (historicalLoaded) {
+      const liveSet = new Set(allAlerts.map(a => a.time + '|' + (a.cities||[]).join()));
+      const cutoff = allAlerts.length ? Math.min(...allAlerts.map(a=>a.time)) : 0;
+      allHistorical = [
+        ...allAlerts,
+        ...allHistorical.filter(a => a.time < cutoff)
+      ];
+    }
+
     cityCounts = {};
-    allAlerts.forEach(a => (a.cities||[]).forEach(c => { cityCounts[c]=(cityCounts[c]||0)+1; }));
+    const src = historicalLoaded ? allHistorical : allAlerts;
+    src.forEach(a => (a.cities||[]).forEach(c => { cityCounts[c]=(cityCounts[c]||0)+1; }));
     initCities();
 
     const oldest = Math.min(...allAlerts.map(a=>a.time));
@@ -1209,8 +1292,8 @@ async function update() {
       hour:'2-digit',minute:'2-digit'
     });
 
-    renderScore(calcScore(allAlerts, selCity, selDur, selStartOffset));
-    renderTimeline(allAlerts);
+    renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
+    renderTimeline(getAlertsInRange(selRange));
 
     const isFirstLoad = document.getElementById('app').style.display === 'none';
     document.getElementById('loading').style.display = 'none';
@@ -1219,7 +1302,7 @@ async function update() {
     // initGauge needs visible DOM for getTotalLength() — run once after first show
     if (isFirstLoad) {
       initGauge();
-      renderScore(calcScore(allAlerts, selCity, selDur, selStartOffset));
+      renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
     }
   } catch(e) {
     document.getElementById('loading').innerHTML =
@@ -1251,7 +1334,7 @@ function setWhen(mode) {
     }
     applyTimeInput(input.value, hint);
   }
-  if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur, selStartOffset));
+  if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
 }
 
 function applyTimeInput(val, hint) {
@@ -1290,11 +1373,21 @@ function applyTimeInput(val, hint) {
     }
   }
 
-  if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur, selStartOffset));
+  if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
 }
 
 document.getElementById('when-time-input')?.addEventListener('change', e => {
   applyTimeInput(e.target.value, document.getElementById('when-time-hint'));
+});
+
+document.getElementById('range-row').addEventListener('click', e => {
+  const b = e.target.closest('.range-btn'); if (!b) return;
+  document.querySelectorAll('.range-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  selRange = parseInt(b.dataset.sec);
+  if (getAlertsInRange(selRange).length)
+    renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
+  renderTimeline(getAlertsInRange(selRange));
 });
 
 document.getElementById('pills').addEventListener('click', e => {
@@ -1302,7 +1395,7 @@ document.getElementById('pills').addEventListener('click', e => {
   document.querySelectorAll('.pill').forEach(x=>x.classList.remove('on'));
   p.classList.add('on');
   selDur = parseInt(p.dataset.min);
-  if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur, selStartOffset));
+  if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
 });
 
 document.getElementById('city-input').addEventListener('input', e => {
@@ -1350,7 +1443,7 @@ document.getElementById('city-input').addEventListener('input', e => {
   }
 
   document.getElementById('sc-city').textContent = selCity || 'כל הארץ';
-  if (allAlerts.length) renderScore(calcScore(allAlerts, selCity, selDur, selStartOffset));
+  if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
 });
 
 update();
