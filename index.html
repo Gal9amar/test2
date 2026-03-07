@@ -1046,7 +1046,7 @@ function calcScore(alerts, city, durMin, startOffsetSec = 0) {
   const now = Date.now() / 1000;
   const refTime = now + startOffsetSec; // reference point: now or future
   const src = city ? alerts.filter(a => (a.cities||[]).includes(city)) : alerts;
-  if (!src.length) return { score:85, level:'safe', trend:'stable', since:9999, avgGap:3600, cnt24:0 };
+  if (!src.length) return { score:85, level:'safe', trend:'stable', since:9999, avgGap:3600, cntRange:0 };
 
   const times = src.map(a=>a.time).sort((a,b)=>b-a);
 
@@ -1081,17 +1081,17 @@ function calcScore(alerts, city, durMin, startOffsetSec = 0) {
   const cntA = filteredTimes.filter(t=>t>=t3h).length;
   const cntB = filteredTimes.filter(t=>t>=t6h && t<t3h).length;
   const trend = cntA > cntB*1.3 ? 'up' : cntA < cntB*0.7 ? 'down' : 'stable';
-  const cnt24 = times.filter(t=>t >= now-86400).length;
+  const cntRange = rangeTimes.length;
   const durSec = durMin * 60;
   let p = 1 - Math.exp(-durSec / Math.max(avgGap, 30));
   if (trend === 'up')      p = Math.min(p * 1.35, 1);
   if (trend === 'down')    p = p * 0.72;
   if (since < 240 && startOffsetSec === 0) p = Math.min(p * 1.45, 1);
   if (since > avgGap*2.5 && startOffsetSec === 0) p = p * 0.82;
-  const vol = Math.min(cnt24 / 40, 1.8);
+  const vol = Math.min(cntRange / 40, 1.8);
   p = Math.min(p * (0.75 + vol * 0.25), 1);
   const score = Math.round(p * 100);
-  return { score, level: score>=55?'danger':score>=25?'warn':'safe', trend, since, avgGap, cnt24 };
+  return { score, level: score>=55?'danger':score>=25?'warn':'safe', trend, since, avgGap, cntRange };
 }
 
 function fmtSec(s) {
@@ -1168,7 +1168,7 @@ function applyLevel(level) {
 }
 
 function renderScore(d) {
-  const { score, level, trend, since, avgGap, cnt24 } = d;
+  const { score, level, trend, since, avgGap, cntRange } = d;
 
   document.getElementById('sc-num').innerHTML = `${score}<span class="gauge-sym">%</span>`;
   setGauge(score, level);
@@ -1192,7 +1192,16 @@ function renderScore(d) {
 
   document.getElementById('st-since').textContent = fmtSec(since);
   document.getElementById('st-avg').textContent   = fmtSec(avgGap);
-  document.getElementById('st-24h').textContent   = cnt24;
+  document.getElementById('st-24h').textContent   = cntRange;
+
+  // Dynamic label for count stat
+  const cntLabel = selFrom > 0 && selTo > 0
+    ? document.querySelector('.range-btn.on')?.textContent || 'טווח'
+    : selFrom > 0 ? 'שאגת הארי'
+    : selRange === 86400 ? '24 שעות'
+    : selRange === 172800 ? '48 שעות'
+    : selRange === 604800 ? 'שבוע' : 'טווח';
+  document.getElementById('st-24h-l').innerHTML = `התרעות<br>${cntLabel}`;
 
   // Threat type counts — filtered by selRange and city
   const rangeLabel = selFrom > 0 && selTo > 0 ? 'כלביא' :
@@ -1211,7 +1220,6 @@ function renderScore(d) {
   // Update stat sublabels to reflect city/national context
   const ctx = selCity ? `ב${selCity}` : 'ממוצע ארצי';
   document.getElementById('st-since-l').innerHTML = `זמן שעבר מהאזעקה<br>האחרונה · ${ctx}`;
-  document.getElementById('st-24h-l').innerHTML   = `התרעות ב-24 שעות<br>${ctx}`;
 
   // Last alert card — filtered by city if selected, otherwise all national alerts
   const src = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
