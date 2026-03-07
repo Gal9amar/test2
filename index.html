@@ -1693,10 +1693,12 @@ let mapCircles = [];
 function renderMap(alerts) {
   if (!leafletMap) {
     leafletMap = L.map('heat-map', { zoomControl: true, attributionControl: false })
-      .setView([31.5, 34.9], 7);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      .setView([31.5, 35.0], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 13
     }).addTo(leafletMap);
+    // Fit to Israel bounds
+    leafletMap.fitBounds([[29.4, 34.2], [33.4, 35.9]]);
   }
   mapCircles.forEach(c => c.remove());
   mapCircles = [];
