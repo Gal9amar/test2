@@ -1061,15 +1061,22 @@ function calcScore(alerts, city, durMin, startOffsetSec = 0) {
     if (!filteredTimes.length) filteredTimes = times; // fallback to all
   }
 
-  const since = now - times[0]; // always from latest actual alert
+  const since = now - times[0];
+
+  // avgGap: over the selected range (not just 6h)
+  const rangeStart = selFrom > 0 ? selFrom : now - (selRange || 86400);
+  const rangeEnd   = selTo   > 0 ? selTo   : now;
+  const rangeTimes = filteredTimes.filter(t => t >= rangeStart && t <= rangeEnd);
+  let avgGap = since;
+  if (rangeTimes.length > 1) {
+    const gaps = [];
+    for (let i = 0; i < rangeTimes.length - 1; i++) gaps.push(rangeTimes[i] - rangeTimes[i+1]);
+    avgGap = gaps.reduce((a,b) => a+b, 0) / gaps.length;
+  }
+
+  // trend still uses last 6h
   const t6h = refTime - 21600;
   const r6 = filteredTimes.filter(t => t >= t6h);
-  let avgGap = since;
-  if (r6.length > 1) {
-    const gaps = [];
-    for (let i=0;i<r6.length-1;i++) gaps.push(r6[i]-r6[i+1]);
-    avgGap = gaps.reduce((a,b)=>a+b,0)/gaps.length;
-  }
   const t3h = refTime - 10800;
   const cntA = filteredTimes.filter(t=>t>=t3h).length;
   const cntB = filteredTimes.filter(t=>t>=t6h && t<t3h).length;
