@@ -561,10 +561,12 @@ header {
 ══════════════════════════════════════════════ */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(3,1fr);
+  grid-template-columns: repeat(5,1fr);
   gap: 10px;
   margin-bottom: 14px;
 }
+@media(max-width:600px){ .stats-row { grid-template-columns: repeat(3,1fr); } }
+@media(max-width:380px){ .stats-row { grid-template-columns: repeat(2,1fr); } }
 .stat-box {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -915,6 +917,14 @@ footer {
       <div class="stat-n" id="st-24h">—</div>
       <div class="stat-l" id="st-24h-l">התרעות<br>ב-24 שעות</div>
     </div>
+    <div class="stat-box">
+      <div class="stat-n" id="st-t0">—</div>
+      <div class="stat-l">ירי רקטות<br>וטילים ב-48ש׳</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-n" id="st-t5">—</div>
+      <div class="stat-l">חדירת כלי<br>טיס עוין ב-48ש׳</div>
+    </div>
   </div>
 
   <!-- TIMELINE -->
@@ -1110,6 +1120,13 @@ function renderScore(d) {
   document.getElementById('st-since').textContent = fmtSec(since);
   document.getElementById('st-avg').textContent   = fmtSec(avgGap);
   document.getElementById('st-24h').textContent   = cnt24;
+
+  // Threat type counts (48h, city-filtered)
+  const now48 = Date.now() / 1000 - 172800;
+  const srcAll = selCity ? allAlerts.filter(a => (a.cities||[]).includes(selCity)) : allAlerts;
+  const src48  = srcAll.filter(a => a.time >= now48);
+  document.getElementById('st-t0').textContent = src48.filter(a => a.threat === 0).length;
+  document.getElementById('st-t5').textContent = src48.filter(a => a.threat === 5).length;
 
   // Update stat sublabels to reflect city/national context
   const ctx = selCity ? `ב${selCity}` : 'ממוצע ארצי';
