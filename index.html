@@ -924,7 +924,6 @@ footer {
 
     <div class="hero-info">
       <div class="hero-city">
-        <div class="hero-city-dot" id="city-dot"></div>
         <span id="sc-city">כל הארץ</span>
         <span id="sc-time" style="font-size:10px;opacity:.5"></span>
       </div>
@@ -1174,7 +1173,6 @@ function applyLevel(level) {
   const glow    = document.getElementById('hero-glow');
   const numEl   = document.getElementById('sc-num');
   const lvlEl   = document.getElementById('lvl-txt');
-  const cityDot = document.getElementById('city-dot');
   const sentEl  = document.getElementById('sc-sent');
 
   // Remove old level classes
@@ -1190,8 +1188,6 @@ function applyLevel(level) {
   numEl.style.color   = c.color;
   lvlEl.style.color   = c.color;
   lvlEl.textContent   = c.label;
-  cityDot.style.background  = c.color;
-  cityDot.style.boxShadow   = `0 0 8px ${c.color}`;
   glow.style.background = `radial-gradient(circle, ${c.glowRgba} 0%, transparent 70%)`;
 
   // em tags inside sentence
