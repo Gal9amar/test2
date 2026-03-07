@@ -1079,7 +1079,6 @@ async function fetchHistorical() {
   if (historicalLoaded) return;
   try {
     const raw = await pFetch(ALL_HIST_URL);
-    // Format: [event_id, threat, [cities], timestamp]
     allHistorical = raw.map(r => ({
       time: r[3], threat: r[1], cities: r[2], isDrill: false
     })).sort((a,b) => b.time - a.time);
@@ -1089,6 +1088,11 @@ async function fetchHistorical() {
       cityCounts[c] = (cityCounts[c] || 0) + 1;
     }));
     initCities();
+    // Re-render everything now that full data is available
+    const ranged = getAlertsInRange(selRange);
+    if (ranged.length) renderScore(calcScore(ranged, selCity, selDur, selStartOffset));
+    renderHotHours(ranged);
+    renderTopCities(ranged);
   } catch(e) {
     console.warn('Historical data load failed:', e.message);
   }
