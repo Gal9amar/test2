@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>זמן בטוח · מערכת מעקב התרעות</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Heebo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ══════════════════════════════════════════════
    VARIABLES
@@ -624,6 +626,113 @@ header {
 }
 
 /* ══════════════════════════════════════════════
+   PANEL BOX (shared)
+══════════════════════════════════════════════ */
+.panel-box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 14px;
+  margin-bottom: 14px;
+}
+
+/* ══════════════════════════════════════════════
+   HOT HOURS
+══════════════════════════════════════════════ */
+.hh-chart {
+  display: flex; align-items: flex-end;
+  gap: 3px; height: 90px; margin-bottom: 6px;
+}
+.hh-col {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  position: relative; cursor: default;
+}
+.hh-col:hover .hh-tip { opacity: 1; }
+.hh-tip {
+  position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.85); border: 1px solid var(--line2);
+  border-radius: 4px; padding: 3px 7px;
+  font-family: var(--mono); font-size: 10px; color: var(--fg);
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity .15s; z-index: 10;
+}
+.hh-bar {
+  width: 100%; border-radius: 2px 2px 0 0;
+  background: var(--safe); opacity: 0.7;
+  transition: height .3s ease, opacity .15s;
+  min-height: 2px;
+}
+.hh-col:hover .hh-bar { opacity: 1; }
+.hh-bar.peak { background: var(--danger); opacity: 0.85; }
+.hh-bar.warm { background: var(--warn); opacity: 0.75; }
+.hh-labels {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 9px;
+  color: var(--fg3); letter-spacing: .5px;
+  margin-top: 2px;
+}
+
+/* ══════════════════════════════════════════════
+   TOP CITIES
+══════════════════════════════════════════════ */
+.top-city-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--line);
+}
+.top-city-row:last-child { border-bottom: none; }
+.tc-rank {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--fg3); min-width: 18px; text-align: center;
+}
+.tc-name {
+  font-family: var(--sans); font-size: 14px;
+  color: var(--fg); flex: 1;
+}
+.tc-bar-wrap {
+  flex: 2; height: 6px; background: rgba(255,255,255,0.06);
+  border-radius: 3px; overflow: hidden;
+}
+.tc-bar {
+  height: 100%; border-radius: 3px;
+  background: var(--safe); transition: width .4s ease;
+}
+.tc-count {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--fg2); min-width: 32px; text-align: left;
+}
+
+/* ══════════════════════════════════════════════
+   SHARE BUTTON
+══════════════════════════════════════════════ */
+.share-btn {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 auto 14px;
+  background: transparent;
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  padding: 7px 18px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .5px; color: var(--fg2);
+  cursor: pointer; transition: all .15s ease;
+}
+.share-btn:hover { border-color: rgba(255,255,255,.25); color: var(--fg); }
+.share-btn.copied { border-color: var(--safe); color: var(--safe); }
+
+/* ══════════════════════════════════════════════
+   MAP
+══════════════════════════════════════════════ */
+.map-wrap {
+  border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--line);
+  margin-bottom: 14px;
+  height: 480px;
+}
+#heat-map { width: 100%; height: 100%; }
+
+/* ══════════════════════════════════════════════
    TIMELINE
 ══════════════════════════════════════════════ */
 .tl-panel {
@@ -972,7 +1081,25 @@ footer {
     </div>
   </div>
 
-  <!-- HOW -->
+  <!-- HOT HOURS -->
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">שעות חמות</div><div class="divider-line"></div></div>
+  <div class="panel-box">
+    <div class="hh-chart" id="hh-chart"></div>
+    <div class="hh-labels">
+      <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>23:00</span>
+    </div>
+  </div>
+
+  <!-- TOP 5 CITIES -->
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">ערים מותקפות</div><div class="divider-line"></div></div>
+  <div class="panel-box" id="top-cities"></div>
+
+  <!-- MAP -->
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">מפת התרעות</div><div class="divider-line"></div></div>
+  <div class="map-wrap"><div id="heat-map"></div></div>
+
+  <!-- SHARE -->
+  <button class="share-btn" id="share-btn" onclick="shareLink()">🔗 שתף קישור</button>
 
 </div><!-- #app -->
 
@@ -1314,6 +1441,9 @@ async function update() {
 
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
     renderTimeline(getAlertsInRange(selRange));
+    renderHotHours(getAlertsInRange(selRange));
+    renderTopCities(getAlertsInRange(selRange));
+    renderMap(getAlertsInRange(selRange));
 
     const isFirstLoad = document.getElementById('app').style.display === 'none';
     document.getElementById('loading').style.display = 'none';
@@ -1416,6 +1546,9 @@ document.getElementById('range-row').addEventListener('click', e => {
   if (getAlertsInRange(selRange).length)
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
   renderTimeline(getAlertsInRange(selRange));
+  renderHotHours(getAlertsInRange(selRange));
+  renderTopCities(getAlertsInRange(selRange));
+  renderMap(getAlertsInRange(selRange));
 });
 
 document.getElementById('pills').addEventListener('click', e => {
@@ -1471,11 +1604,149 @@ document.getElementById('city-input').addEventListener('input', e => {
   }
 
   document.getElementById('sc-city').textContent = selCity || 'כל הארץ';
-  if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
+  if (getAlertsInRange(selRange).length) {
+    renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
+    renderHotHours(getAlertsInRange(selRange));
+    renderTopCities(getAlertsInRange(selRange));
+    renderMap(getAlertsInRange(selRange));
+  }
 });
 
 update();
 setInterval(update, REFRESH);
+
+// ── City coordinates (major Israeli cities) ──
+const CITY_COORDS = {
+  'תל אביב - יפו':[32.0853,34.7818],'ירושלים':[31.7683,35.2137],'חיפה':[32.7940,34.9896],
+  'ראשון לציון':[31.9730,34.7925],'פתח תקווה':[32.0840,34.8878],'אשדוד':[31.8040,34.6553],
+  'נתניה':[32.3215,34.8532],'באר שבע':[31.2518,34.7913],'בני ברק':[32.0840,34.8337],
+  'חולון':[32.0114,34.7740],'רמת גן':[32.0706,34.8235],'אשקלון':[31.6688,34.5743],
+  'רחובות':[31.8928,34.8113],'בת ים':[32.0236,34.7503],'הרצליה':[32.1657,34.8438],
+  'כפר סבא':[32.1781,34.9077],'מודיעין-מכבים-רעות':[31.8986,35.0104],'חדרה':[32.4343,34.9195],
+  'לוד':[31.9515,34.8953],'רמלה':[31.9271,34.8737],'נהריה':[33.0046,35.0982],
+  'נצרת':[32.6996,35.3035],'עכו':[32.9289,35.0786],'עפולה':[32.6057,35.2897],
+  'אילת':[29.5577,34.9519],'טבריה':[32.7940,35.5309],'צפת':[32.9641,35.4954],
+  'קריית שמונה':[33.2074,35.5681],'שדרות':[31.5246,34.5965],'נתיבות':[31.4189,34.5893],
+  'אופקים':[31.3143,34.6212],'דימונה':[31.0694,35.0321],'ירוחם':[30.9868,34.9274],
+  'מצפה רמון':[30.6106,34.8016],'קריית גת':[31.6097,34.7642],'קריית מלאכי':[31.7266,34.7397],
+  'יבנה':[31.8783,34.7417],'גדרה':[31.8119,34.7757],'רהט':[31.3917,34.7546],
+  'כרמיאל':[32.9147,35.3011],'מגדל העמק':[32.6773,35.2383],'טירת כרמל':[32.7601,34.9700],
+  'קריית ביאליק':[32.8372,35.0893],'קריית ים':[32.8449,35.0699],'קריית אתא':[32.8075,35.1127],
+  'קריית מוצקין':[32.8333,35.0747],'נשר':[32.7760,35.0348],'זכרון יעקב':[32.5710,34.9496],
+  'פרדס חנה-כרכור':[32.4693,34.9726],'בית שאן':[32.4963,35.4987],'חצור הגלילית':[33.0189,35.5548],
+  'ערד':[31.2591,35.2135],'קצרין':[32.9941,35.6899],
+  'שלומי':[33.0700,35.1427],'נהריה':[33.0046,35.0982],'מעלות-תרשיחא':[33.0158,35.2717],
+  'חניתה':[33.0926,35.1776],'יערה':[33.0791,35.1598],'שתולה':[33.0786,35.2112],
+  'מצובה':[33.0520,35.1563],'ערב אל עראמשה':[33.0700,35.1800],
+};
+
+function coordsForCity(name) {
+  if (CITY_COORDS[name]) return CITY_COORDS[name];
+  // fuzzy: try prefix match
+  const k = Object.keys(CITY_COORDS).find(c => c.startsWith(name.slice(0,4)));
+  return k ? CITY_COORDS[k] : null;
+}
+
+// ── Hot Hours chart ──
+function renderHotHours(alerts) {
+  const src = selCity ? alerts.filter(a => (a.cities||[]).includes(selCity)) : alerts;
+  const counts = new Array(24).fill(0);
+  src.forEach(a => {
+    const h = new Date(a.time * 1000).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',hour12:false});
+    const hr = parseInt(h); if (hr >= 0 && hr < 24) counts[hr]++;
+  });
+  const maxC = Math.max(...counts, 1);
+  const chart = document.getElementById('hh-chart');
+  chart.innerHTML = '';
+  counts.forEach((c, h) => {
+    const pct = (c / maxC) * 100;
+    const cls = pct >= 80 ? 'peak' : pct >= 50 ? 'warm' : '';
+    const col = document.createElement('div');
+    col.className = 'hh-col';
+    col.innerHTML = `
+      <span class="hh-tip">${String(h).padStart(2,'0')}:00 — ${c} התרעות</span>
+      <div class="hh-bar ${cls}" style="height:${Math.max(pct,2)}%"></div>`;
+    chart.appendChild(col);
+  });
+}
+
+// ── Top 5 cities ──
+function renderTopCities(alerts) {
+  const counts = {};
+  alerts.forEach(a => (a.cities||[]).forEach(c => { counts[c] = (counts[c]||0) + 1; }));
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 5);
+  const maxV = sorted[0]?.[1] || 1;
+  const el = document.getElementById('top-cities');
+  el.innerHTML = sorted.map(([name, cnt], i) => `
+    <div class="top-city-row">
+      <span class="tc-rank">#${i+1}</span>
+      <span class="tc-name">${name}</span>
+      <div class="tc-bar-wrap"><div class="tc-bar" style="width:${(cnt/maxV)*100}%"></div></div>
+      <span class="tc-count">${cnt}</span>
+    </div>`).join('');
+}
+
+// ── Map ──
+let leafletMap = null;
+let mapCircles = [];
+
+function renderMap(alerts) {
+  if (!leafletMap) {
+    leafletMap = L.map('heat-map', { zoomControl: true, attributionControl: false })
+      .setView([31.5, 34.9], 7);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 13
+    }).addTo(leafletMap);
+  }
+  mapCircles.forEach(c => c.remove());
+  mapCircles = [];
+
+  const counts = {};
+  alerts.forEach(a => (a.cities||[]).forEach(c => { counts[c] = (counts[c]||0) + 1; }));
+  const maxV = Math.max(...Object.values(counts), 1);
+
+  Object.entries(counts).forEach(([name, cnt]) => {
+    const coords = coordsForCity(name);
+    if (!coords) return;
+    const ratio = cnt / maxV;
+    const radius = 2000 + ratio * 22000;
+    const color  = ratio >= 0.7 ? '#ff3d57' : ratio >= 0.35 ? '#ffb020' : '#00e5a0';
+    const circle = L.circle(coords, {
+      radius, color, fillColor: color,
+      fillOpacity: 0.25 + ratio * 0.35,
+      weight: 1, opacity: 0.7
+    }).bindTooltip(`${name}: ${cnt} התרעות`, { direction:'top', sticky:true });
+    circle.addTo(leafletMap);
+    mapCircles.push(circle);
+  });
+}
+
+// ── Share link ──
+function shareLink() {
+  const params = new URLSearchParams();
+  if (selCity) params.set('city', selCity);
+  if (selFrom) params.set('from', selFrom);
+  if (selTo)   params.set('to',   selTo);
+  if (selRange && !selFrom) params.set('range', selRange);
+  params.set('dur', selDur);
+  const url = location.origin + location.pathname + (params.toString() ? '?' + params.toString() : '');
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('share-btn');
+    btn.textContent = '✅ הקישור הועתק!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = '🔗 שתף קישור'; btn.classList.remove('copied'); }, 2500);
+  });
+}
+
+// ── Read URL params on load ──
+(function applyUrlParams() {
+  const p = new URLSearchParams(location.search);
+  if (p.has('city'))  selCity  = p.get('city');
+  if (p.has('dur'))   selDur   = parseInt(p.get('dur'));
+  if (p.has('from'))  { selFrom = parseInt(p.get('from')); selRange = 0; }
+  if (p.has('to'))    selTo    = parseInt(p.get('to'));
+  if (p.has('range')) selRange = parseInt(p.get('range'));
+})();
 
 // Live clock
 function updateClock() {
