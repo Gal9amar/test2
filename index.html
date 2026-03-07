@@ -802,21 +802,6 @@ footer {
   <div class="h-logo">זמן בטוח</div>
 </header>
 
-<!-- ── CITY PICKER (always visible, above app) ── -->
-<div class="wrap-city">
-  <div class="ctrl-panel">
-    <div class="ctrl-lbl">// סינון לפי עיר <span style="text-transform:none;letter-spacing:0;color:var(--fg3);font-size:9px">— ריק = כל הארץ</span></div>
-    <div class="city-wrap">
-      <input class="city-inp" id="city-input"
-        type="text" placeholder="הקלד שם עיר..."
-        autocomplete="off" list="city-dl">
-      <span class="city-icon" id="city-status"></span>
-      <datalist id="city-dl"></datalist>
-    </div>
-    <div class="city-msg" id="city-msg"></div>
-  </div>
-</div>
-
 <!-- ── DISCLAIMER ── -->
 
 
@@ -834,6 +819,17 @@ footer {
     <div class="duration-now" id="duration-now"></div>
     <div class="duration-intro-title">אני מתכנן פעילות בזמן של</div>
     <div class="duration-intro-sub">בחר את משך הפעילות הרצויה — המערכת תחשב עבורך את הסיכוי לאזעקה בזמן הזה</div>
+
+    <!-- CITY PICKER -->
+    <div class="city-wrap" style="margin-bottom:10px">
+      <input class="city-inp" id="city-input"
+        type="text" placeholder="🔍 סינון לפי עיר — ריק = כל הארץ"
+        autocomplete="off" list="city-dl">
+      <span class="city-icon" id="city-status"></span>
+      <datalist id="city-dl"></datalist>
+    </div>
+    <div class="city-msg" id="city-msg"></div>
+
     <div class="pills" id="pills">
       <div class="pill" data-min="5">5 דק׳</div>
       <div class="pill on" data-min="10">10 דק׳</div>
