@@ -1917,6 +1917,8 @@ function startLiveMapPolling() {
   if (src.length) lastSeenAlertTime = Math.max(...src.map(a => a.time));
   pollLiveAlerts();
   setInterval(pollLiveAlerts, 10000);
+  // Expire check runs every second — independent of API latency
+  setInterval(expireLiveAlerts, 1000);
 }
 
 // Add tooltip + pulse styles
