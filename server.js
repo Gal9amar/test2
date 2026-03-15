@@ -34,12 +34,15 @@ function broadcast(eventName, payload) {
 
 // ─────────────────────────────────────────
 // Live polling — oref first, tzevaadom fallback
+// Polls every 10s (tzevaadom doesn't need 2s)
 // ─────────────────────────────────────────
+const ACTIVE_WINDOW = 5 * 60; // 5 minutes — treat alerts this recent as "active"
+
 async function pollLive() {
-  // Try oref
+  // 1. Try oref direct (works only from Israeli IP)
   try {
-    const res  = await fetch(OREF_LIVE, { headers: OREF_HEADERS, signal: AbortSignal.timeout(3000) });
-    const text = await res.text();
+    const res   = await fetch(OREF_LIVE, { headers: OREF_HEADERS, signal: AbortSignal.timeout(3000) });
+    const text  = await res.text();
     const clean = text.replace(/^\uFEFF/, '').trim();
 
     if (!clean || clean === '{}' || clean === '[]') {
@@ -57,32 +60,67 @@ async function pollLive() {
       broadcast('alert_new', data);
       broadcast('feed_update', alertFeed.slice(0, 20));
     }
-    return; // oref worked — done
+    return; // oref worked
   } catch (_) {}
 
-  // Fallback: tzevaadom live
+  // 2. Fallback: tzevaadom history — check last 5 min for new alerts
   try {
-    const res  = await fetch(TZEVA_LIVE, { signal: AbortSignal.timeout(3000), headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const res  = await fetch(TZEVA_HIST, { signal: AbortSignal.timeout(6000), headers: { 'User-Agent': 'Mozilla/5.0' } });
     const data = await res.json();
-    if (!Array.isArray(data) || !data.length) {
+    if (!Array.isArray(data) || !data.length) return;
+
+    const now     = Math.floor(Date.now() / 1000);
+    const cutoff  = now - ACTIVE_WINDOW;
+
+    // Flatten all recent alerts
+    const recent = data
+      .flatMap(e => (e.alerts||[]).filter(a => !a.isDrill && a.time >= cutoff))
+      .sort((a, b) => b.time - a.time);
+
+    if (!recent.length) {
+      // Nothing in last 5 min — clear active if needed
       if (currentAlert !== null) { currentAlert = null; broadcast('alert_clear', {}); }
       return;
     }
-    const newest = data[0];
-    const id = String(newest.time);
-    if (id !== lastAlertId) {
-      lastAlertId  = id;
-      currentAlert = { id, data: newest.cities||[], cat: newest.threat, title: '' };
-      const entry  = { id, time: newest.time, cities: newest.cities||[], cat: newest.threat, title: '' };
-      alertFeed.unshift(entry);
-      if (alertFeed.length > 50) alertFeed.pop();
-      broadcast('alert_new', currentAlert);
+
+    // Build feed from recent (deduplicate by time+cities key)
+    const seen = new Set(alertFeed.map(e => e.id));
+    let newEntries = 0;
+    for (const a of recent) {
+      const id = String(a.time) + '_' + (a.cities||[]).join(',');
+      if (!seen.has(id)) {
+        seen.add(id);
+        const entry = { id, time: a.time, cities: a.cities||[], cat: a.threat, title: threatLabel(a.threat) };
+        alertFeed.unshift(entry);
+        newEntries++;
+        // Broadcast each new alert
+        broadcast('alert_new', { id, data: a.cities||[], cat: a.threat, title: entry.title });
+      }
+    }
+    if (alertFeed.length > 50) alertFeed.length = 50;
+
+    if (newEntries > 0) {
       broadcast('feed_update', alertFeed.slice(0, 20));
     }
+
+    // Set currentAlert to most recent if within 5 min
+    const latest = recent[0];
+    const latestId = String(latest.time) + '_' + (latest.cities||[]).join(',');
+    if (latestId !== lastAlertId) {
+      lastAlertId  = latestId;
+      currentAlert = { id: latestId, data: latest.cities||[], cat: latest.threat, title: threatLabel(latest.threat) };
+      broadcast('alert_new', currentAlert);
+    }
+
   } catch (_) {}
 }
 
-setInterval(pollLive, 2000);
+function threatLabel(cat) {
+  const map = { 0: 'ירי רקטות וטילים', 1: 'חומרים מסוכנים', 2: 'רעידת אדמה', 3: 'פצצה לא מתפוצצת', 4: 'צונאמי', 5: 'חדירת כלי טיס עוין', 6: 'חדירת מחבלים', 7: 'אירוע רדיולוגי' };
+  return map[cat] || 'התרעה';
+}
+
+setInterval(pollLive, 10000); // every 10s — tzevaadom doesn't need faster
 pollLive();
 
 // ─────────────────────────────────────────
