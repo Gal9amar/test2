@@ -121,7 +121,46 @@ function threatLabel(cat) {
 }
 
 setInterval(pollLive, 10000); // every 10s — tzevaadom doesn't need faster
-pollLive();
+
+// Pre-populate feed on startup so first SSE snapshot has data
+async function initFeed() {
+  try {
+    const res  = await fetch(TZEVA_HIST, { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const data = await res.json();
+    if (!Array.isArray(data)) return;
+
+    const now    = Math.floor(Date.now() / 1000);
+    const cutoff = now - 24 * 60 * 60; // last 24h for feed
+
+    const alerts = data
+      .flatMap(e => (e.alerts||[]).filter(a => !a.isDrill && a.time >= cutoff))
+      .sort((a, b) => b.time - a.time)
+      .slice(0, 50);
+
+    alertFeed = alerts.map(a => ({
+      id:     String(a.time) + '_' + (a.cities||[]).join(','),
+      time:   a.time,
+      cities: a.cities || [],
+      cat:    a.threat,
+      title:  threatLabel(a.threat),
+    }));
+
+    // Set lastAlertId to most recent so pollLive doesn't re-broadcast them
+    if (alertFeed.length) {
+      lastAlertId = alertFeed[0].id;
+      // If most recent alert was within 5 min, set as currentAlert for map
+      if (now - alertFeed[0].time < ACTIVE_WINDOW) {
+        const a = alerts[0];
+        currentAlert = { id: lastAlertId, data: a.cities||[], cat: a.threat, title: threatLabel(a.threat) };
+      }
+    }
+    console.log(`[init] feed pre-populated: ${alertFeed.length} alerts`);
+  } catch (e) {
+    console.warn('[init] feed pre-population failed:', e.message);
+  }
+}
+
+initFeed().then(() => pollLive());
 
 // ─────────────────────────────────────────
 // SSE endpoint  GET /api/stream
