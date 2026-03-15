@@ -1912,9 +1912,8 @@ async function pollLiveAlerts() {
 
 // Kick off live polling after map init
 function startLiveMapPolling() {
-  // Set baseline so we don't flash old alerts on load
-  const src = historicalLoaded ? allHistorical : allAlerts;
-  if (src.length) lastSeenAlertTime = Math.max(...src.map(a => a.time));
+  // Baseline = now minus 10 min — only alerts newer than this will show on map
+  lastSeenAlertTime = Date.now() / 1000 - LIVE_EXPIRE_MS / 1000;
   pollLiveAlerts();
   setInterval(pollLiveAlerts, 10000);
   // Expire check runs every second — independent of API latency
