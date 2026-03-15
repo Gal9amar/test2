@@ -1468,10 +1468,9 @@ async function fetchAlerts() {
   const r = await fetch('/api/history');
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const data = await r.json();
-  // oref history format: array of {alerts:[{cities,cat,time,...}]}
+  // /api/history now returns flat array [{time, cities, threat, isDrill}]
   if (Array.isArray(data)) {
-    return data.flatMap(e => (e.alerts || []).filter(a => !a.isDrill))
-               .sort((a,b) => b.time - a.time);
+    return data.sort((a,b) => b.time - a.time);
   }
   return [];
 }
