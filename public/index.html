@@ -56,6 +56,8 @@
   gtag('config', 'G-8WN0T5QR1Y');
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Heebo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 /* ══════════════════════════════════════════════
    VARIABLES
@@ -858,6 +860,128 @@ footer {
   .stat-n    { font-size: 20px; }
   header     { flex-direction: column; align-items: flex-start; }
 }
+
+/* ══════════════════════════════════════════════
+   LIVE MAP SECTION
+══════════════════════════════════════════════ */
+.live-section {
+  margin: 28px 0;
+}
+.live-section-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--fg2);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.live-dot-small {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--safe);
+  box-shadow: 0 0 6px var(--safe);
+  animation: pulse-live 1.5s infinite;
+}
+.live-dot-small.alert-active {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+}
+@keyframes pulse-live {
+  0%,100% { opacity:1; }
+  50%      { opacity:.4; }
+}
+#map-container {
+  width: 100%;
+  height: 340px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  position: relative;
+}
+/* Override leaflet dark tiles */
+.leaflet-tile-pane { filter: brightness(0.7) saturate(0.5); }
+.leaflet-container { background: #0d1117; }
+.leaflet-control-attribution { display: none; }
+.leaflet-control-zoom a {
+  background: var(--panel) !important;
+  color: var(--fg) !important;
+  border-color: var(--line2) !important;
+}
+
+/* Alert Feed */
+.feed-section { margin: 28px 0; }
+.feed-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--fg2);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+#alert-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.feed-item {
+  background: var(--panel);
+  border: 1px solid var(--line2);
+  border-right: 3px solid var(--fg3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  animation: fade-up .3s ease both;
+}
+.feed-item.cat-rockets   { border-right-color: var(--danger); }
+.feed-item.cat-uav       { border-right-color: var(--warn); }
+.feed-item.cat-terror    { border-right-color: #9b30ff; }
+.feed-item.cat-other     { border-right-color: var(--fg3); }
+.feed-item-time {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--fg3);
+  white-space: nowrap;
+  min-width: 38px;
+}
+.feed-item-body { flex: 1; }
+.feed-item-title {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg);
+  letter-spacing: .5px;
+}
+.feed-item-cities {
+  font-size: 11px;
+  color: var(--fg2);
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+/* Pulse banner for active alert */
+#alert-banner {
+  display: none;
+  background: rgba(255,61,87,0.12);
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--danger);
+  letter-spacing: 1px;
+  animation: pulse-banner 1s infinite;
+}
+#alert-banner.visible { display: block; }
+@keyframes pulse-banner {
+  0%,100% { opacity:1; }
+  50%      { opacity:.7; }
+}
 </style>
 </head>
 <body>
@@ -875,6 +999,24 @@ footer {
 <div id="loading" class="loading">
   <div class="radar-loader"><div class="radar-core"></div></div>
   <div class="loading-txt">LOADING DATA_</div>
+</div>
+
+<!-- ── ACTIVE ALERT BANNER ── -->
+<div id="alert-banner">🔴 <span id="alert-banner-text">אזעקה פעילה</span></div>
+
+<!-- ── LIVE MAP ── -->
+<div class="live-section">
+  <div class="live-section-title">
+    <span class="live-dot-small" id="live-dot"></span>
+    מפת אזעקות חיה
+  </div>
+  <div id="map-container"></div>
+</div>
+
+<!-- ── ALERT FEED ── -->
+<div class="feed-section">
+  <div class="feed-title">התרעות אחרונות</div>
+  <div id="alert-feed"><div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px">מחכה לנתונים...</div></div>
 </div>
 
 <!-- ── APP ── -->
@@ -1094,14 +1236,14 @@ footer {
 
 </div><!-- .wrap -->
 <script>
-const PROXY       = 'https://api.codetabs.com/v1/proxy/?quest=';
-const HIST_URL    = 'https://api.tzevaadom.co.il/alerts-history/';
-const LIVE_URL    = 'https://api.tzevaadom.co.il/notifications';
-const ALL_HIST_URL= 'https://www.tzevaadom.co.il/static/historical/all.json';
-const REFRESH     = 30000;
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const FULL_HIST_URL = '/api/historical-all';
+const REFRESH       = 30000; // fallback polling for stats (won't be needed for live)
 
-let allAlerts      = [];  // live ~48h
-let allHistorical  = [];  // full history from 2021
+let allAlerts      = [];
+let allHistorical  = [];
 let historicalLoaded = false;
 let cityCounts     = {};
 let selDur         = 5;
@@ -1112,26 +1254,240 @@ let selFrom        = 1772229600;
 let selTo          = 0;
 let citiesInit     = false;
 
-async function pFetch(url) {
-  const r = await fetch(PROXY + encodeURIComponent(url));
+// ═══════════════════════════════════════════
+// SSE — connect to our backend stream
+// ═══════════════════════════════════════════
+let _es = null;
+let _sseConnected = false;
+
+function connectSSE() {
+  if (_es) { _es.close(); _es = null; }
+  _es = new EventSource('/api/stream');
+
+  _es.addEventListener('snapshot', e => {
+    const snap = JSON.parse(e.data);
+    _sseConnected = true;
+    document.getElementById('live-dot').classList.remove('alert-active');
+
+    if (snap.currentAlert) {
+      showActiveBanner(snap.currentAlert);
+      highlightMapAlert(snap.currentAlert.data || []);
+    }
+    if (snap.feed && snap.feed.length) {
+      renderFeed(snap.feed);
+    }
+  });
+
+  _es.addEventListener('alert_new', e => {
+    const alert = JSON.parse(e.data);
+    showActiveBanner(alert);
+    highlightMapAlert(alert.data || []);
+    // Add to feed immediately
+    prependFeedItem({
+      id:     alert.id,
+      time:   Math.floor(Date.now() / 1000),
+      cities: alert.data || [],
+      cat:    alert.cat,
+      title:  alert.title || '',
+    });
+  });
+
+  _es.addEventListener('alert_clear', () => {
+    clearActiveBanner();
+    clearMapHighlight();
+  });
+
+  _es.addEventListener('feed_update', e => {
+    renderFeed(JSON.parse(e.data));
+  });
+
+  _es.onerror = () => {
+    _sseConnected = false;
+    setTimeout(connectSSE, 3000);
+  };
+}
+
+connectSSE();
+
+// ═══════════════════════════════════════════
+// Active alert banner
+// ═══════════════════════════════════════════
+function showActiveBanner(alert) {
+  const banner = document.getElementById('alert-banner');
+  const text   = document.getElementById('alert-banner-text');
+  const cities = (alert.data || []).slice(0, 5).join(' · ');
+  text.textContent = (alert.title || 'אזעקה פעילה') + (cities ? ` — ${cities}` : '');
+  banner.classList.add('visible');
+  document.getElementById('live-dot').classList.add('alert-active');
+}
+
+function clearActiveBanner() {
+  document.getElementById('alert-banner').classList.remove('visible');
+  document.getElementById('live-dot').classList.remove('alert-active');
+}
+
+// ═══════════════════════════════════════════
+// Leaflet map
+// ═══════════════════════════════════════════
+const CAT_COLOR = {
+  1: '#ff3d57', // rockets
+  6: '#ff8c00', // uav
+  10: '#9b30ff', // terror
+  13: '#9b30ff',
+};
+
+let map = null;
+let alertLayer = null; // GeoJSON layer for alert highlights
+let geojsonData = null;
+let cityPolygons = {}; // name → layer
+
+function initMap() {
+  map = L.map('map-container', {
+    center: [31.5, 34.8],
+    zoom: 7,
+    zoomControl: true,
+    attributionControl: false,
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 13,
+    opacity: 0.6,
+  }).addTo(map);
+
+  alertLayer = L.layerGroup().addTo(map);
+
+  // Load Israel GeoJSON from oref.live (same source they use, publicly accessible)
+  fetch('https://oref.live/static/israel.geojson?h=1433109d')
+    .then(r => r.json())
+    .then(data => {
+      geojsonData = data;
+      L.geoJSON(data, {
+        style: featureStyle,
+        onEachFeature: (feature, layer) => {
+          const name = feature.properties?.name || '';
+          if (name) cityPolygons[name] = layer;
+          layer.bindTooltip(name, { permanent: false, className: 'map-tooltip' });
+        },
+      }).addTo(map);
+    })
+    .catch(() => {
+      // GeoJSON not available — map still works as a base
+    });
+}
+
+function featureStyle() {
+  return {
+    fillColor: '#1a1a2e',
+    fillOpacity: 0.85,
+    color: '#333',
+    weight: 0.8,
+  };
+}
+
+function alertStyleForCat(cat) {
+  const color = CAT_COLOR[cat] || '#ff3d57';
+  return {
+    fillColor: color,
+    fillOpacity: 0.6,
+    color: color,
+    weight: 1.5,
+  };
+}
+
+let _highlightedLayers = [];
+
+function highlightMapAlert(cities) {
+  clearMapHighlight();
+  if (!geojsonData) return;
+  cities.forEach(cityName => {
+    const layer = cityPolygons[cityName];
+    if (layer) {
+      layer.setStyle(alertStyleForCat(1));
+      _highlightedLayers.push(layer);
+    }
+  });
+}
+
+function clearMapHighlight() {
+  _highlightedLayers.forEach(layer => {
+    layer.setStyle(featureStyle());
+  });
+  _highlightedLayers = [];
+}
+
+// Init map after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+});
+
+// ═══════════════════════════════════════════
+// Alert feed rendering
+// ═══════════════════════════════════════════
+const CAT_CLASS = { 1:'cat-rockets', 6:'cat-uav', 10:'cat-terror', 13:'cat-terror' };
+const CAT_LABEL = { 1:'טילים', 6:'כטב"מ', 10:'מחבלים', 13:'מחבלים' };
+
+function feedItemHTML(item) {
+  const time  = new Date(item.time * 1000).toLocaleTimeString('he-IL',
+    { timeZone:'Asia/Jerusalem', hour:'2-digit', minute:'2-digit' });
+  const catCls = CAT_CLASS[item.cat] || 'cat-other';
+  const catLbl = CAT_LABEL[item.cat] || item.title || 'התרעה';
+  const cities = (item.cities || []).slice(0, 6).join(' · ');
+  const more   = (item.cities || []).length > 6 ? ` +${item.cities.length - 6}` : '';
+  return `
+    <div class="feed-item ${catCls}">
+      <div class="feed-item-time">${time}</div>
+      <div class="feed-item-body">
+        <div class="feed-item-title">${catLbl}</div>
+        <div class="feed-item-cities">${cities}${more}</div>
+      </div>
+    </div>`;
+}
+
+function renderFeed(items) {
+  const el = document.getElementById('alert-feed');
+  if (!items || !items.length) {
+    el.innerHTML = '<div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px">אין התרעות אחרונות</div>';
+    return;
+  }
+  el.innerHTML = items.slice(0, 15).map(feedItemHTML).join('');
+}
+
+function prependFeedItem(item) {
+  const el = document.getElementById('alert-feed');
+  const existing = el.querySelectorAll('.feed-item');
+  const html = feedItemHTML(item);
+  el.insertAdjacentHTML('afterbegin', html);
+  // Keep max 15
+  if (existing.length >= 15) el.lastElementChild?.remove();
+}
+
+// ═══════════════════════════════════════════
+// Data fetching (history for stats)
+// ═══════════════════════════════════════════
+async function fetchAlerts() {
+  const r = await fetch('/api/history');
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  return r.json();
+  const data = await r.json();
+  // oref history format: array of {alerts:[{cities,cat,time,...}]}
+  if (Array.isArray(data)) {
+    return data.flatMap(e => (e.alerts || []).filter(a => !a.isDrill))
+               .sort((a,b) => b.time - a.time);
+  }
+  return [];
 }
 
 async function fetchHistorical() {
   if (historicalLoaded) return;
   try {
-    const raw = await pFetch(ALL_HIST_URL);
+    const raw = await fetch(FULL_HIST_URL).then(r => r.json());
     allHistorical = raw.map(r => ({
       time: r[3], threat: r[1], cities: r[2], isDrill: false
     })).sort((a,b) => b.time - a.time);
     historicalLoaded = true;
-    // Rebuild cityCounts with full history
     allHistorical.forEach(a => (a.cities||[]).forEach(c => {
       cityCounts[c] = (cityCounts[c] || 0) + 1;
     }));
     initCities();
-    // Re-render everything now that full data is available
     const ranged = getAlertsInRange(selRange);
     if (ranged.length) renderScore(calcScore(ranged, selCity, selDur, selStartOffset));
     renderHotHours(ranged);
@@ -1142,44 +1498,33 @@ async function fetchHistorical() {
 }
 
 function getAlertsInRange(rangeSec) {
-  const cutoff = selFrom > 0 ? selFrom : Date.now() / 1000 - rangeSec;
+  const cutoff  = selFrom > 0 ? selFrom : Date.now() / 1000 - rangeSec;
   const ceiling = selTo > 0 ? selTo : Infinity;
-  const base = historicalLoaded ? allHistorical : allAlerts;
+  const base    = historicalLoaded ? allHistorical : allAlerts;
   return base.filter(a => a.time >= cutoff && a.time <= ceiling);
 }
 
-async function fetchAlerts() {
-  const [hist, live] = await Promise.allSettled([pFetch(HIST_URL), pFetch(LIVE_URL)]);
-  let alerts = [];
-  if (hist.status === 'fulfilled' && Array.isArray(hist.value))
-    alerts = hist.value.flatMap(e => (e.alerts||[]).filter(a => !a.isDrill));
-  if (live.status === 'fulfilled' && Array.isArray(live.value) && live.value.length)
-    alerts = [...live.value.filter(a => !a.isDrill), ...alerts];
-  return alerts.sort((a,b) => b.time - a.time);
-}
-
+// ═══════════════════════════════════════════
+// Score calculation (unchanged logic)
+// ═══════════════════════════════════════════
 function calcScore(alerts, city, durMin, startOffsetSec = 0) {
   const now = Date.now() / 1000;
-  const refTime = now + startOffsetSec; // reference point: now or future
+  const refTime = now + startOffsetSec;
   const src = city ? alerts.filter(a => (a.cities||[]).includes(city)) : alerts;
   if (!src.length) return { score:85, level:'safe', trend:'stable', since:9999, avgGap:3600, cntRange:0 };
 
   const times = src.map(a=>a.time).sort((a,b)=>b-a);
-
-  // If future time: use alerts from same hour-window in past 48h for avgGap
   let filteredTimes = times;
   if (startOffsetSec > 0) {
     const targetHour = new Date(refTime * 1000).getHours();
     filteredTimes = times.filter(t => {
       const h = new Date(t * 1000).getHours();
-      return Math.abs(h - targetHour) <= 1; // ±1 hour window
+      return Math.abs(h - targetHour) <= 1;
     });
-    if (!filteredTimes.length) filteredTimes = times; // fallback to all
+    if (!filteredTimes.length) filteredTimes = times;
   }
 
   const since = now - times[0];
-
-  // avgGap: over the selected range (not just 6h)
   const rangeStart = selFrom > 0 ? selFrom : now - (selRange || 86400);
   const rangeEnd   = selTo   > 0 ? selTo   : now;
   const rangeTimes = filteredTimes.filter(t => t >= rangeStart && t <= rangeEnd);
@@ -1190,18 +1535,16 @@ function calcScore(alerts, city, durMin, startOffsetSec = 0) {
     avgGap = gaps.reduce((a,b) => a+b, 0) / gaps.length;
   }
 
-  // trend still uses last 6h
-  const t6h = refTime - 21600;
-  const r6 = filteredTimes.filter(t => t >= t6h);
-  const t3h = refTime - 10800;
+  const t6h  = refTime - 21600;
+  const t3h  = refTime - 10800;
   const cntA = filteredTimes.filter(t=>t>=t3h).length;
   const cntB = filteredTimes.filter(t=>t>=t6h && t<t3h).length;
   const trend = cntA > cntB*1.3 ? 'up' : cntA < cntB*0.7 ? 'down' : 'stable';
   const cntRange = rangeTimes.length;
   const durSec = durMin * 60;
   let p = 1 - Math.exp(-durSec / Math.max(avgGap, 30));
-  if (trend === 'up')      p = Math.min(p * 1.35, 1);
-  if (trend === 'down')    p = p * 0.72;
+  if (trend === 'up')   p = Math.min(p * 1.35, 1);
+  if (trend === 'down') p = p * 0.72;
   if (since < 240 && startOffsetSec === 0) p = Math.min(p * 1.45, 1);
   if (since > avgGap*2.5 && startOffsetSec === 0) p = p * 0.82;
   const vol = Math.min(cntRange / 40, 1.8);
@@ -1230,13 +1573,15 @@ function fmtSec(s) {
   return `${Math.round(s)} שניות`;
 }
 
-// Use browser's exact path length measurement — no hardcoded constants
-let ARC = 400; // fallback, overwritten on init
+// ═══════════════════════════════════════════
+// Gauge (unchanged)
+// ═══════════════════════════════════════════
+let ARC = 400;
 function initGauge() {
   const fill = document.getElementById('arc-fill');
   ARC = fill.getTotalLength();
   fill.style.strokeDasharray = `${ARC} ${ARC * 2}`;
-  fill.style.strokeDashoffset = ARC; // start empty
+  fill.style.strokeDashoffset = ARC;
 }
 
 function setGauge(score, level) {
@@ -1252,41 +1597,43 @@ function setGauge(score, level) {
 }
 
 function applyLevel(level) {
-  const hero    = document.getElementById('hero-section');
-  const glow    = document.getElementById('hero-glow');
-  const numEl   = document.getElementById('sc-num');
-  const lvlEl   = document.getElementById('lvl-txt');
-  const sentEl  = document.getElementById('sc-sent');
-
-  // Remove old level classes
+  const hero   = document.getElementById('hero-section');
+  const glow   = document.getElementById('hero-glow');
+  const numEl  = document.getElementById('sc-num');
+  const lvlEl  = document.getElementById('lvl-txt');
+  const sentEl = document.getElementById('sc-sent');
   hero.classList.remove('lvl-safe','lvl-warn','lvl-danger');
   hero.classList.add(`lvl-${level}`);
-
   const cfg = {
-    safe:   { color:'var(--safe)',   label:'נמוך',   glowRgba:'rgba(0,229,160,0.08)',   sentBg:'rgba(0,229,160,0.12)'   },
-    warn:   { color:'var(--warn)',   label:'בינוני', glowRgba:'rgba(255,176,32,0.07)',  sentBg:'rgba(255,176,32,0.12)'  },
-    danger: { color:'var(--danger)', label:'גבוה',   glowRgba:'rgba(255,61,87,0.09)',   sentBg:'rgba(255,61,87,0.12)'   },
+    safe:   { color:'var(--safe)',   label:'נמוך',   glowRgba:'rgba(0,229,160,0.08)',  sentBg:'rgba(0,229,160,0.12)'  },
+    warn:   { color:'var(--warn)',   label:'בינוני', glowRgba:'rgba(255,176,32,0.07)', sentBg:'rgba(255,176,32,0.12)' },
+    danger: { color:'var(--danger)', label:'גבוה',   glowRgba:'rgba(255,61,87,0.09)',  sentBg:'rgba(255,61,87,0.12)'  },
   };
   const c = cfg[level];
-  numEl.style.color   = c.color;
-  lvlEl.style.color   = c.color;
-  lvlEl.textContent   = c.label;
+  numEl.style.color = c.color;
+  lvlEl.style.color = c.color;
+  lvlEl.textContent = c.label;
   glow.style.background = `radial-gradient(circle, ${c.glowRgba} 0%, transparent 70%)`;
-
-  // em tags inside sentence
   sentEl.querySelectorAll('em').forEach(el => {
     el.style.background = c.sentBg;
     el.style.color      = c.color;
   });
 }
 
+// ═══════════════════════════════════════════
+// renderScore (unchanged)
+// ═══════════════════════════════════════════
+const THREAT_TYPES = {
+  0: 'ירי רקטות וטילים', 1: 'אירוע חומרים מסוכנים', 2: 'רעידת אדמה',
+  3: 'פצצה לא מתפוצצת', 4: 'צונאמי', 5: 'חדירת כלי טיס עוין',
+  6: 'חדירת מחבלים', 7: 'אירוע רדיולוגי',
+};
+
 function renderScore(d) {
   const { score, level, trend, since, avgGap, cntRange } = d;
-
   document.getElementById('sc-num').innerHTML = `${score}<span class="gauge-sym">%</span>`;
   setGauge(score, level);
   applyLevel(level);
-
   document.getElementById('sc-city').textContent = selCity || 'כל הארץ';
   document.getElementById('sc-time').textContent =
     new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
@@ -1297,17 +1644,12 @@ function renderScore(d) {
   const adj     = level==='safe'?'נמוך':level==='warn'?'בינוני':'גבוה';
   document.getElementById('sc-sent').innerHTML =
     `${emoji} סיכוי לאזעקה במהלך <em>${durTxt}</em>${cityTxt}: <em>${adj}</em>`;
-  // Re-apply colours to the new em tags
   applyLevel(level);
-
-  const trendTxt = trend==='up'?'↑ עולה':trend==='down'?'↓ יורדת':'→ יציבה';
-
 
   document.getElementById('st-since').textContent = fmtSec(since);
   document.getElementById('st-avg').textContent   = fmtSec(avgGap);
   document.getElementById('st-24h').textContent   = cntRange;
 
-  // Dynamic label for count stat
   const cntLabel = selFrom > 0 && selTo > 0
     ? document.querySelector('.range-btn.on')?.textContent || 'טווח'
     : selFrom > 0 ? 'שאגת הארי'
@@ -1316,11 +1658,10 @@ function renderScore(d) {
     : selRange === 604800 ? 'שבוע' : 'טווח';
   document.getElementById('st-24h-l').innerHTML = `התרעות<br>${cntLabel}`;
 
-  // Threat type counts — filtered by selRange and city
   const rangeLabel = selFrom > 0 && selTo > 0 ? 'עם כלביא' :
-                     selFrom > 0 ? 'שאגת הארי' :
-                     selRange === 86400 ? '24ש׳' : selRange === 172800 ? '48ש׳' :
-                     selRange === 604800 ? 'שבוע' : `${selRange/86400}י׳`;
+    selFrom > 0 ? 'שאגת הארי' :
+    selRange === 86400 ? '24ש׳' : selRange === 172800 ? '48ש׳' :
+    selRange === 604800 ? 'שבוע' : `${selRange/86400}י׳`;
   const srcAll = selCity
     ? getAlertsInRange(selRange).filter(a => (a.cities||[]).includes(selCity))
     : getAlertsInRange(selRange);
@@ -1329,25 +1670,12 @@ function renderScore(d) {
   document.getElementById('st-t0-l').innerHTML = `ירי רקטות<br>וטילים · ${rangeLabel}`;
   document.getElementById('st-t5-l').innerHTML = `חדירת כלי<br>טיס עוין · ${rangeLabel}`;
 
-  // Update stat sublabels to reflect city/national context
   const ctx = selCity ? `ב${selCity}` : 'ממוצע ארצי';
   document.getElementById('st-since-l').innerHTML = `זמן שעבר מהאזעקה<br>האחרונה · ${ctx}`;
 
-  // Last alert card — uses full history for most recent, filtered by city
   const allSrc = historicalLoaded ? allHistorical : allAlerts;
   const src = selCity ? allSrc.filter(a => (a.cities||[]).includes(selCity)) : allSrc;
   const last = src.length ? src.reduce((a,b) => a.time > b.time ? a : b) : null;
-const THREAT_TYPES = {
-  0: 'ירי רקטות וטילים',
-  1: 'אירוע חומרים מסוכנים',
-  2: 'רעידת אדמה',
-  3: 'פצצה לא מתפוצצת',
-  4: 'צונאמי',
-  5: 'חדירת כלי טיס עוין',
-  6: 'חדירת מחבלים',
-  7: 'אירוע רדיולוגי',
-};
-
   if (last) {
     const cityDisplay = selCity || (last.cities||[]).join(', ') || '—';
     const alertTime = new Date(last.time * 1000).toLocaleString('he-IL', {
@@ -1371,20 +1699,19 @@ function initCities() {
   });
 }
 
+// ═══════════════════════════════════════════
+// Main update loop (for stats, not for live)
+// ═══════════════════════════════════════════
 async function update() {
   try {
     allAlerts = await fetchAlerts();
-
-    // Kick off historical load in background (first time only)
     if (!historicalLoaded) fetchHistorical();
 
-    // Merge live alerts into historical for freshness
     if (historicalLoaded) {
-      const liveSet = new Set(allAlerts.map(a => a.time + '|' + (a.cities||[]).join()));
       const cutoff = allAlerts.length ? Math.min(...allAlerts.map(a=>a.time)) : 0;
       allHistorical = [
         ...allAlerts,
-        ...allHistorical.filter(a => a.time < cutoff)
+        ...allHistorical.filter(a => a.time < cutoff),
       ];
     }
 
@@ -1393,103 +1720,24 @@ async function update() {
     src.forEach(a => (a.cities||[]).forEach(c => { cityCounts[c]=(cityCounts[c]||0)+1; }));
     initCities();
 
-    const oldest = Math.min(...allAlerts.map(a=>a.time));
-    const newest = Math.max(...allAlerts.map(a=>a.time));
-    const fmt = ts => new Date(ts*1000).toLocaleString('he-IL',{
-      timeZone:'Asia/Jerusalem',day:'2-digit',month:'2-digit',
-      hour:'2-digit',minute:'2-digit'
-    });
-
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
     renderHotHours(getAlertsInRange(selRange));
     renderTopCities(getAlertsInRange(selRange));
 
-    const isFirstLoad = document.getElementById('app').style.display === 'none';
     document.getElementById('loading').style.display = 'none';
-    document.getElementById('app').style.display     = 'block';
-
-    // initGauge needs visible DOM for getTotalLength() — run once after first show
-    if (isFirstLoad) {
+    const appEl = document.getElementById('app');
+    if (appEl.style.display === 'none') {
+      appEl.style.display = 'block';
       initGauge();
-      renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
     }
   } catch(e) {
-    document.getElementById('loading').innerHTML =
-      `<div style="color:var(--danger);text-align:center;padding:20px;font-family:var(--mono);font-size:12px;letter-spacing:1px">ERR: ${e.message}<br><br><span style="color:var(--fg3)">RETRY IN 30S_</span></div>`;
+    console.error('update failed:', e);
   }
 }
 
-function setWhen(mode) {
-  const btnNow   = document.getElementById('when-now');
-  const btnLater = document.getElementById('when-later');
-  const wrap     = document.getElementById('when-time-wrap');
-  const input    = document.getElementById('when-time-input');
-  const hint     = document.getElementById('when-time-hint');
-
-  if (mode === 'now') {
-    btnNow.classList.add('on');
-    btnLater.classList.remove('on');
-    wrap.style.display = 'none';
-    selStartOffset = 0;
-  } else {
-    btnNow.classList.remove('on');
-    btnLater.classList.add('on');
-    wrap.style.display = 'flex';
-
-    // Default to 1 hour from now if no value set
-    if (!input.value) {
-      const d = new Date(Date.now() + 3600000);
-      input.value = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-    }
-    applyTimeInput(input.value, hint);
-  }
-  if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
-}
-
-function applyTimeInput(val, hint) {
-  if (!val) return;
-  const [h, m] = val.split(':').map(Number);
-  const now = new Date();
-  const target = new Date();
-  target.setHours(h, m, 0, 0);
-  if (target <= now) target.setDate(target.getDate() + 1);
-  selStartOffset = (target - now) / 1000;
-  const diffMin = Math.round(selStartOffset / 60);
-  const diffH   = Math.floor(diffMin / 60);
-  const diffM   = diffMin % 60;
-  hint.textContent = diffH > 0
-    ? `בעוד ${diffH} שעות${diffM > 0 ? ` ו-${diffM} דקות` : ''}`
-    : `בעוד ${diffM} דקות`;
-
-  // Historical note: count alerts in same ±1h window from full history
-  const noteEl = document.getElementById('when-history-note');
-  if (noteEl) {
-    const histSrc = historicalLoaded ? allHistorical : allAlerts;
-    const src = selCity ? histSrc.filter(a => (a.cities||[]).includes(selCity)) : histSrc;
-    const window = src.filter(a => {
-      const ah = new Date(a.time * 1000).getHours();
-      return Math.abs(ah - h) <= 1;
-    });
-    const days = new Set(window.map(a => {
-      const d = new Date(a.time * 1000);
-      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    })).size;
-    const total = window.length;
-    const cityCtx = selCity ? `ב${selCity}` : 'בכל הארץ';
-    if (total === 0) {
-      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 לא נרשמו התרעות ${cityCtx} בהיסטוריה`;
-    } else {
-      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 נרשמו ${total} התרעות ${cityCtx} ב-${days} יום${days !== 1 ? 'ים' : ''} שונים`;
-    }
-  }
-
-  if (getAlertsInRange(selRange).length) renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
-}
-
-document.getElementById('when-time-input')?.addEventListener('change', e => {
-  applyTimeInput(e.target.value, document.getElementById('when-time-hint'));
-});
-
+// ═══════════════════════════════════════════
+// Event listeners (unchanged)
+// ═══════════════════════════════════════════
 document.getElementById('range-row').addEventListener('click', e => {
   const b = e.target.closest('.range-btn'); if (!b) return;
   document.querySelectorAll('.range-btn').forEach(x => x.classList.remove('on'));
@@ -1531,7 +1779,6 @@ document.getElementById('city-input').addEventListener('input', e => {
   const known = Object.keys(cityCounts);
   const statusEl = document.getElementById('city-status');
   const msgEl    = document.getElementById('city-msg');
-
   if (!v) {
     selCity = '';
     statusEl.textContent = '';
@@ -1539,15 +1786,12 @@ document.getElementById('city-input').addEventListener('input', e => {
   } else if (known.includes(v)) {
     selCity = v;
     statusEl.textContent = '✅';
-    // Compute city-specific stats
     const now = Date.now() / 1000;
     const cityAlerts = (historicalLoaded ? allHistorical : allAlerts).filter(a => (a.cities||[]).includes(v));
     const count48 = cityAlerts.filter(a => a.time >= now - 172800).length;
     const count24 = cityAlerts.filter(a => a.time >= now - 86400).length;
     const times = cityAlerts.map(a => a.time).sort((a,b) => b-a);
-    const sinceStr = times.length
-      ? fmtSec(now - times[0]) + ' מאז האחרונה'
-      : 'לא נרשמו התרעות';
+    const sinceStr = times.length ? fmtSec(now - times[0]) + ' מאז האחרונה' : 'לא נרשמו התרעות';
     const alertWord = count48 === 1 ? 'התרעה' : 'התרעות';
     msgEl.innerHTML =
       `✓ <strong>${v}</strong> — ${count48} ${alertWord} ב-48 שעות האחרונות` +
@@ -1569,7 +1813,6 @@ document.getElementById('city-input').addEventListener('input', e => {
       msgEl.className = 'city-msg';
     }
   }
-
   document.getElementById('sc-city').textContent = selCity || 'כל הארץ';
   if (getAlertsInRange(selRange).length) {
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
@@ -1578,10 +1821,57 @@ document.getElementById('city-input').addEventListener('input', e => {
   }
 });
 
-update();
-setInterval(update, REFRESH);
+// ═══════════════════════════════════════════
+// When picker
+// ═══════════════════════════════════════════
+function setWhen(mode) {
+  document.getElementById('when-now').classList.toggle('on', mode === 'now');
+  document.getElementById('when-later').classList.toggle('on', mode === 'later');
+  const wrap = document.getElementById('when-time-wrap');
+  wrap.style.display = mode === 'later' ? 'block' : 'none';
+  if (mode === 'now') {
+    selStartOffset = 0;
+    document.getElementById('when-history-note').textContent = '';
+    if (getAlertsInRange(selRange).length)
+      renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
+  }
+}
 
-// ── Hot Hours chart ──
+function applyTimeInput(val, hintEl) {
+  if (!val) return;
+  const [h, m] = val.split(':').map(Number);
+  const now = new Date();
+  const target = new Date();
+  target.setHours(h, m, 0, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+  selStartOffset = Math.round((target - now) / 1000);
+  if (hintEl) hintEl.textContent = `בעוד ${fmtSec(selStartOffset)}`;
+
+  const noteEl = document.getElementById('when-history-note');
+  if (noteEl) {
+    const days = historicalLoaded ? [...new Set(allHistorical.map(a => {
+      const d = new Date(a.time * 1000);
+      return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }))].length : 0;
+    const total = (historicalLoaded ? allHistorical : allAlerts).filter(a => {
+      const ah = new Date(a.time * 1000).getHours();
+      return Math.abs(ah - h) <= 1 && (!selCity || (a.cities||[]).includes(selCity));
+    }).length;
+    const cityCtx = selCity ? `ב${selCity}` : 'בכל הארץ';
+    if (days > 0 && total > 0)
+      noteEl.textContent = `בשעות ${h-1}:00–${h+1}:00 נרשמו ${total} התרעות ${cityCtx} ב-${days} ימים שונים`;
+  }
+  if (getAlertsInRange(selRange).length)
+    renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
+}
+
+document.getElementById('when-time-input')?.addEventListener('change', e => {
+  applyTimeInput(e.target.value, document.getElementById('when-time-hint'));
+});
+
+// ═══════════════════════════════════════════
+// Hot Hours & Top Cities (unchanged)
+// ═══════════════════════════════════════════
 function renderHotHours(alerts) {
   const src = selCity ? alerts.filter(a => (a.cities||[]).includes(selCity)) : alerts;
   const counts = new Array(24).fill(0);
@@ -1589,31 +1879,24 @@ function renderHotHours(alerts) {
     const hr = new Date(a.time * 1000).toLocaleString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',hour12:false});
     const h = parseInt(hr); if (h >= 0 && h < 24) counts[h]++;
   });
-  const maxC = Math.max(...counts, 1);
+  const maxC  = Math.max(...counts, 1);
   const total = counts.reduce((a,b) => a+b, 0);
   const chart = document.getElementById('hh-chart');
-
-  // Sort by count desc for display
   const sorted = counts.map((c,h) => ({h, c})).sort((a,b) => b.c - a.c);
-
   chart.innerHTML = sorted.map(({h, c}) => {
     if (c === 0) return '';
-    const pct = Math.round((c / total) * 100);
+    const pct    = Math.round((c / total) * 100);
     const barPct = (c / maxC) * 100;
-    const cls = barPct >= 80 ? 'peak' : barPct >= 50 ? 'warm' : '';
-    return `
-      <div class="hh-row">
-        <span class="hh-hour">${String(h).padStart(2,'0')}:00</span>
-        <div class="hh-bar-wrap">
-          <div class="hh-bar ${cls}" style="width:${Math.max(barPct,1)}%"></div>
-        </div>
-        <span class="hh-num">${c}</span>
-        <span class="hh-pct">${pct}%</span>
-      </div>`;
+    const cls    = barPct >= 80 ? 'peak' : barPct >= 50 ? 'warm' : '';
+    return `<div class="hh-row">
+      <span class="hh-hour">${String(h).padStart(2,'0')}:00</span>
+      <div class="hh-bar-wrap"><div class="hh-bar ${cls}" style="width:${Math.max(barPct,1)}%"></div></div>
+      <span class="hh-num">${c}</span>
+      <span class="hh-pct">${pct}%</span>
+    </div>`;
   }).join('');
 }
 
-// ── Top 5 cities ──
 function renderTopCities(alerts) {
   const counts = {};
   alerts.forEach(a => (a.cities||[]).forEach(c => { counts[c] = (counts[c]||0) + 1; }));
@@ -1629,7 +1912,9 @@ function renderTopCities(alerts) {
     </div>`).join('');
 }
 
-// ── Share ──
+// ═══════════════════════════════════════════
+// Share
+// ═══════════════════════════════════════════
 function shareLink() {
   const params = new URLSearchParams();
   if (selCity) params.set('city', selCity);
@@ -1638,7 +1923,6 @@ function shareLink() {
   if (selRange && !selFrom) params.set('range', selRange);
   params.set('dur', selDur);
   const url = location.origin + location.pathname + (params.toString() ? '?' + params.toString() : '');
-
   if (navigator.share) {
     navigator.share({ title: 'זמן בטוח — מעקב התרעות', url });
   } else {
@@ -1651,7 +1935,9 @@ function shareLink() {
   }
 }
 
-// ── Read URL params on load ──
+// ═══════════════════════════════════════════
+// URL params
+// ═══════════════════════════════════════════
 (function applyUrlParams() {
   const p = new URLSearchParams(location.search);
   if (p.has('city'))  selCity  = p.get('city');
@@ -1661,23 +1947,25 @@ function shareLink() {
   if (p.has('range')) selRange = parseInt(p.get('range'));
 })();
 
+// ═══════════════════════════════════════════
 // Live clock
+// ═══════════════════════════════════════════
 function updateClock() {
   const el = document.getElementById('duration-now');
   if (!el) return;
-  const now = new Date();
-  const time = now.toLocaleTimeString('he-IL', {
-    timeZone: 'Asia/Jerusalem',
-    hour: '2-digit', minute: '2-digit', second: '2-digit'
-  });
-  const date = now.toLocaleDateString('he-IL', {
-    timeZone: 'Asia/Jerusalem',
-    weekday: 'long', day: 'numeric', month: 'long'
-  });
+  const now  = new Date();
+  const time = now.toLocaleTimeString('he-IL',{timeZone:'Asia/Jerusalem',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const date = now.toLocaleDateString('he-IL',{timeZone:'Asia/Jerusalem',weekday:'long',day:'numeric',month:'long'});
   el.textContent = `${date} · ${time}`;
 }
 updateClock();
 setInterval(updateClock, 1000);
+
+// ═══════════════════════════════════════════
+// Boot
+// ═══════════════════════════════════════════
+update();
+setInterval(update, REFRESH);
 </script>
 </body>
 </html>
