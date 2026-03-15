@@ -13,8 +13,6 @@
   gtag('config', 'G-8WN0T5QR1Y');
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Heebo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 /* ══════════════════════════════════════════════
    VARIABLES
@@ -779,56 +777,8 @@ header {
 .how-panel p strong { color: var(--fg); }
 
 /* ══════════════════════════════════════════════
-   MAP PANEL
+   FOOTER
 ══════════════════════════════════════════════ */
-.map-panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 14px;
-}
-#alert-map {
-  width: 100%;
-  height: 420px;
-  background: #0d1117;
-}
-/* Override Leaflet to match dark theme */
-.leaflet-container {
-  background: #080a0d !important;
-  font-family: var(--mono) !important;
-}
-.leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(0.85) saturate(0.7); }
-.leaflet-control-attribution { display: none !important; }
-.leaflet-control-zoom a {
-  background: var(--panel) !important;
-  color: var(--fg) !important;
-  border-color: var(--line2) !important;
-}
-.leaflet-control-zoom a:hover { background: var(--panelhi) !important; }
-.map-legend {
-  padding: 10px 14px;
-  border-top: 1px solid var(--line);
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-}
-.map-legend-item {
-  display: flex; align-items: center; gap: 6px;
-  font-family: var(--mono); font-size: 10px;
-  color: var(--fg2); letter-spacing: .5px;
-}
-.map-legend-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-}
-.map-legend-dot.peak  { background: #ff3d57; box-shadow: 0 0 6px #ff3d57; }
-.map-legend-dot.warm  { background: #ffb020; box-shadow: 0 0 6px #ffb020; }
-.map-legend-dot.safe  { background: #00e5a0; box-shadow: 0 0 6px #00e5a0; }
-.map-count-badge {
-  margin-right: auto;
-  font-family: var(--mono); font-size: 10px;
-  color: var(--fg3); letter-spacing: 1px;
-}
-
-
 footer {
   border-top: 1px solid var(--line);
   padding: 18px 0 0;
@@ -1084,19 +1034,6 @@ footer {
   <div class="divider"><div class="divider-line"></div><div class="divider-txt">שעות חמות</div><div class="divider-line"></div></div>
   <div class="panel-box">
     <div class="hh-chart" id="hh-chart"></div>
-  </div>
-
-  <!-- MAP -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">מפת התרעות</div><div class="divider-line"></div></div>
-  <div class="map-panel">
-    <div id="alert-map"></div>
-    <div class="map-legend">
-      <div class="map-legend-item"><div class="map-legend-dot peak"></div>גבוה (5+)</div>
-      <div class="map-legend-item"><div class="map-legend-dot warm"></div>בינוני (2-4)</div>
-      <div class="map-legend-item"><div class="map-legend-dot safe"></div>נמוך (1)</div>
-      <div id="map-live-badge"></div>
-      <div class="map-count-badge" id="map-count-badge">טוען...</div>
-    </div>
   </div>
 
   <!-- TOP 5 CITIES -->
@@ -1432,13 +1369,6 @@ async function update() {
     if (isFirstLoad) {
       initGauge();
       renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
-      // Init map after DOM visible
-      setTimeout(() => {
-        renderMap(getAlertsInRange(selRange));
-        startLiveMapPolling();
-      }, 100);
-    } else {
-      renderMap(getAlertsInRange(selRange));
     }
   } catch(e) {
     document.getElementById('loading').innerHTML =
@@ -1530,12 +1460,10 @@ document.getElementById('range-row').addEventListener('click', e => {
     selTo    = 0;
     selRange = parseInt(b.dataset.sec);
   }
-  if (getAlertsInRange(selRange).length) {
+  if (getAlertsInRange(selRange).length)
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
-    renderHotHours(getAlertsInRange(selRange));
-    renderTopCities(getAlertsInRange(selRange));
-    renderMap(getAlertsInRange(selRange));
-  }
+  renderHotHours(getAlertsInRange(selRange));
+  renderTopCities(getAlertsInRange(selRange));
 });
 
 document.getElementById('pills').addEventListener('click', e => {
@@ -1604,7 +1532,6 @@ document.getElementById('city-input').addEventListener('input', e => {
     renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
     renderHotHours(getAlertsInRange(selRange));
     renderTopCities(getAlertsInRange(selRange));
-    renderMap(getAlertsInRange(selRange));
   }
 });
 
@@ -1691,276 +1618,7 @@ function shareLink() {
   if (p.has('range')) selRange = parseInt(p.get('range'));
 })();
 
-
-// ══════════════════════════════════════════════
-//  MAP
-// ══════════════════════════════════════════════
-let alertMap = null;
-let mapLayers = [];
-
-// Approximate coordinates for common Israeli cities
-const CITY_COORDS = {
-  'תל אביב': [32.0853, 34.7818], 'ירושלים': [31.7683, 35.2137],
-  'חיפה': [32.7940, 34.9896], 'באר שבע': [31.2530, 34.7915],
-  'נתניה': [32.3215, 34.8532], 'ראשון לציון': [31.9730, 34.8054],
-  'פתח תקווה': [32.0872, 34.8867], 'אשדוד': [31.7989, 34.6498],
-  'אשקלון': [31.6689, 34.5714], 'חולון': [32.0118, 34.7800],
-  'בני ברק': [32.0841, 34.8337], 'רמת גן': [32.0681, 34.8240],
-  'בת ים': [32.0234, 34.7445], 'רחובות': [31.8969, 34.8086],
-  'הרצליה': [32.1663, 34.8438], 'כפר סבא': [32.1754, 34.9077],
-  'מודיעין': [31.8969, 35.0100], 'רעננה': [32.1843, 34.8706],
-  'לוד': [31.9516, 34.8952], 'רמלה': [31.9298, 34.8706],
-  'עכו': [32.9238, 35.0762], 'נצרת': [32.6996, 35.3035],
-  'אילת': [29.5581, 34.9482], 'טבריה': [32.7922, 35.5312],
-  'צפת': [32.9646, 35.4961], 'קריית גת': [31.6068, 34.7642],
-  'קריית שמונה': [33.2074, 35.5714], 'נהריה': [33.0053, 35.0938],
-  'דימונה': [31.0694, 35.0344], 'אופקים': [31.3130, 34.6210],
-  'שדרות': [31.5241, 34.5956], 'נתיבות': [31.4213, 34.5894],
-  'קריית מלאכי': [31.7305, 34.7374], 'אשכול': [31.3400, 34.5300],
-  'שער הנגב': [31.5800, 34.6000], 'חוף אשקלון': [31.7000, 34.5500],
-  'שפלה': [31.8000, 34.8000], 'לכיש': [31.6500, 34.8000],
-  'יואב': [31.6000, 34.9000], 'גן יבנה': [31.7863, 34.7074],
-  'מעלה אדומים': [31.7727, 35.2977], 'אלעד': [32.0535, 34.9486],
-  'ביתר עילית': [31.6939, 35.1156], 'בית שמש': [31.7468, 34.9883],
-  'גבעת שמואל': [32.0783, 34.8450], 'הוד השרון': [32.1503, 34.8897],
-  'כפר יונה': [32.3171, 34.9362], 'טייבה': [32.2690, 34.9980],
-  'ערד': [31.2551, 35.2125], 'מצפה רמון': [30.6100, 34.8015],
-  'יהוד': [31.9952, 34.8847], 'אור יהודה': [32.0271, 34.8578],
-  'גבעתיים': [32.0667, 34.8134], 'קרית אונו': [32.0633, 34.8574],
-  'גדרה': [31.8139, 34.7783], 'יבנה': [31.8752, 34.7440],
-  'זכרון יעקב': [32.5731, 34.9540], 'עתלית': [32.6923, 34.9411],
-  'טירה': [32.2348, 34.9502], 'קלנסווה': [32.2803, 34.9795],
-  'שוהם': [31.9972, 34.9424], 'קריית ביאליק': [32.8332, 35.0860],
-  'קריית ים': [32.8543, 35.0744], 'קריית אתא': [32.8119, 35.1101],
-  'קריית מוצקין': [32.8358, 35.0750], 'קריית טבעון': [32.7196, 35.1373],
-  'נשר': [32.7655, 35.0333], 'פרדס חנה': [32.4716, 34.9706],
-  'בית שאן': [32.4988, 35.4988], 'עפולה': [32.6083, 35.2888],
-  'נוף הגליל': [32.7085, 35.3015], 'מגדל העמק': [32.6747, 35.2378],
-  'כרמיאל': [32.9162, 35.2982], 'יוקנעם עילית': [32.6571, 35.1023],
-  'טמרה': [32.8562, 35.1997], 'שפרעם': [32.8068, 35.1685],
-  'ירכא': [32.9503, 35.1812], 'מג׳ד אל כרום': [32.9140, 35.2484],
-  'סח׳נין': [32.8613, 35.2994], 'ערבה': [32.8532, 35.3368],
-  'כפר כנא': [32.7441, 35.3403], 'ריינה': [32.7219, 35.3151],
-  'כפר מנדא': [32.8242, 35.2683], 'בסמה': [32.9108, 35.3134],
-  'ג׳לג׳וליה': [32.1527, 34.9571], 'קלנסווה': [32.2803, 34.9795],
-  'אום אל פחם': [32.5152, 35.1540], 'ג׳סר א-זרקא': [32.5371, 34.9138],
-  'פוריידיס': [32.5992, 34.9541], 'כפר קרע': [32.5097, 35.0283],
-  'ערערה': [32.5005, 35.0561], 'באקה אל גרביה': [32.4177, 35.0434],
-  'יפיע': [32.6851, 35.2636], 'ג׳ת': [32.3855, 35.1225],
-  'נחף': [32.9340, 35.3467], 'עילבון': [32.8247, 35.3514],
-  'פקיעין': [32.9836, 35.3230], 'מעלות תרשיחא': [33.0148, 35.2721],
-  'כסרא סמיע': [32.9605, 35.2884], 'ירושלים - מרכז': [31.7800, 35.2200],
-  'ירושלים - צפון': [31.8200, 35.2100], 'ירושלים - דרום': [31.7400, 35.2100],
-  'תל אביב - מרכז': [32.0800, 34.7800], 'תל אביב - צפון': [32.1000, 34.7900],
-};
-
-function getCityCoords(name) {
-  if (CITY_COORDS[name]) return CITY_COORDS[name];
-  // Fuzzy match — try partial
-  for (const [k, v] of Object.entries(CITY_COORDS)) {
-    if (name.includes(k) || k.includes(name)) return v;
-  }
-  return null;
-}
-
-const LIVE_EXPIRE_MS = 10 * 60 * 1000; // 10 minutes
-let liveAlertMarkers = []; // { addedAt, layers: [] }
-let knownAlertKeys   = new Set(); // "time|city" to detect new ones
-const boundaryCache  = {}; // city -> GeoJSON feature (cache fetched boundaries)
-
-function initMap() {
-  if (alertMap) return;
-  alertMap = L.map('alert-map', {
-    center: [31.5, 34.9],
-    zoom: 8,
-    zoomControl: true,
-    scrollWheelZoom: false,
-    attributionControl: false
-  });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 14, minZoom: 6
-  }).addTo(alertMap);
-}
-
-// ── Fetch city boundary polygon from Nominatim ──
-async function fetchCityBoundary(cityHe) {
-  if (boundaryCache[cityHe] !== undefined) return boundaryCache[cityHe];
-  boundaryCache[cityHe] = null; // mark as requested (avoid double fetch)
-  try {
-    const coords = getCityCoords(cityHe);
-    if (!coords) return null;
-    // Use viewbox around known coords to improve accuracy
-    const [lat, lng] = coords;
-    const url = `https://nominatim.openstreetmap.org/search?` +
-      `q=${encodeURIComponent(cityHe)}&format=geojson&polygon_geojson=1&limit=1` +
-      `&countrycodes=il&viewbox=${lng-0.3},${lat+0.3},${lng+0.3},${lat-0.3}&bounded=1`;
-    const res = await fetch(url, { headers: { 'User-Agent': 'SafeTime-AlertMap/1.0' } });
-    const data = await res.json();
-    const feat = data.features?.find(f =>
-      ['Polygon','MultiPolygon'].includes(f.geometry?.type)
-    ) || null;
-    boundaryCache[cityHe] = feat;
-    return feat;
-  } catch(e) {
-    return null;
-  }
-}
-
-// ── Static map - now empty (only live alerts shown) ──
-function renderMap(alerts) {
-  if (!alertMap) initMap();
-  // Clear static layers — we only show live boundaries now
-  mapLayers.forEach(l => alertMap.removeLayer(l));
-  mapLayers = [];
-  const badge = document.getElementById('map-count-badge');
-  if (badge) badge.textContent = liveAlertMarkers.length > 0
-    ? `${liveAlertMarkers.length} התרעות פעילות`
-    : 'ממתין להתרעות...';
-}
-
-// ── Draw a city boundary polygon ──
-async function drawCityBoundary(city, alertTime) {
-  const boundary = await fetchCityBoundary(city);
-  const coords   = getCityCoords(city);
-  const now      = Date.now();
-  const layers   = [];
-
-  const timeStr = new Date(alertTime * 1000).toLocaleTimeString('he-IL', {
-    timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit'
-  });
-  const tooltip = `🔴 <strong>${city}</strong><br>${timeStr}`;
-
-  if (boundary) {
-    // Real polygon boundary
-    const poly = L.geoJSON(boundary, {
-      style: {
-        color: '#ff3d57',
-        weight: 2.5,
-        opacity: 1,
-        fillColor: '#ff3d57',
-        fillOpacity: 0.18,
-        className: 'live-boundary-poly'
-      }
-    }).bindTooltip(tooltip, {
-      direction: 'top', className: 'map-tooltip map-tooltip-live', sticky: true
-    }).addTo(alertMap);
-    layers.push(poly);
-  } else if (coords) {
-    // Fallback: circle if no boundary found
-    const circle = L.circle(coords, {
-      radius: 3500,
-      color: '#ff3d57', weight: 2.5, opacity: 1,
-      fillColor: '#ff3d57', fillOpacity: 0.18,
-      className: 'live-boundary-poly'
-    }).bindTooltip(tooltip, {
-      direction: 'top', className: 'map-tooltip map-tooltip-live'
-    }).addTo(alertMap);
-    layers.push(circle);
-  }
-
-  if (layers.length) {
-    liveAlertMarkers.push({ addedAt: now, layers });
-    updateLiveBadge();
-  }
-}
-
-// ── Add live alert to map ──
-async function addLiveAlertToMap(alert) {
-  if (!alertMap) return;
-
-  for (const city of (alert.cities || [])) {
-    const key = `${alert.time}|${city}`;
-    if (knownAlertKeys.has(key)) continue;
-    knownAlertKeys.add(key);
-    await drawCityBoundary(city, alert.time);
-  }
-}
-
-
-function expireLiveAlerts() {
-  if (!alertMap) return;
-  const now = Date.now();
-  const remaining = [];
-  liveAlertMarkers.forEach(m => {
-    if (now - m.addedAt > LIVE_EXPIRE_MS) {
-      m.layers.forEach(l => alertMap.removeLayer(l));
-    } else {
-      remaining.push(m);
-    }
-  });
-  liveAlertMarkers = remaining;
-  updateLiveBadge();
-}
-
-function updateLiveBadge() {
-  const badge = document.getElementById('map-live-badge');
-  if (!badge) return;
-  const n = liveAlertMarkers.length;
-  badge.textContent = n > 0 ? `🔴 ${n} התרעה פעילה` : '';
-  badge.style.color = n > 0 ? '#ff3d57' : 'transparent';
-}
-
-// ── Poll for NEW live alerts every 10s (separate from main REFRESH) ──
-let lastSeenAlertTime = 0;
-
-async function pollLiveAlerts() {
-  try {
-    const data = await pFetch(LIVE_URL);
-    if (!Array.isArray(data)) return;
-    const fresh = data.filter(a => !a.isDrill && a.time > lastSeenAlertTime);
-    if (fresh.length) {
-      lastSeenAlertTime = Math.max(...fresh.map(a => a.time));
-      fresh.forEach(addLiveAlertToMap);
-    }
-  } catch(e) { /* silent */ }
-  expireLiveAlerts();
-}
-
-// Kick off live polling after map init
-function startLiveMapPolling() {
-  // Baseline = now minus 10 min — only alerts newer than this will show on map
-  lastSeenAlertTime = Date.now() / 1000 - LIVE_EXPIRE_MS / 1000;
-  pollLiveAlerts();
-  setInterval(pollLiveAlerts, 10000);
-  // Expire check runs every second — independent of API latency
-  setInterval(expireLiveAlerts, 1000);
-}
-
-// Add tooltip + pulse styles
-const mapStyle = document.createElement('style');
-mapStyle.textContent = `
-  .map-tooltip {
-    background: #111820 !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    color: #d4dce8 !important;
-    font-family: 'Share Tech Mono', monospace !important;
-    font-size: 12px !important;
-    border-radius: 6px !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
-    padding: 6px 10px !important;
-    direction: rtl !important;
-  }
-  .map-tooltip-live {
-    border-color: rgba(255,61,87,0.5) !important;
-    box-shadow: 0 0 12px rgba(255,61,87,0.3) !important;
-  }
-  .leaflet-tooltip-top::before { border-top-color: rgba(255,255,255,0.15) !important; }
-  @keyframes boundary-pulse {
-    0%,100% { stroke-opacity: 1; fill-opacity: 0.18; }
-    50%      { stroke-opacity: 0.4; fill-opacity: 0.08; }
-  }
-  .live-boundary-poly {
-    animation: boundary-pulse 1.6s ease-in-out infinite;
-  }
-  #map-live-badge {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px; letter-spacing: 1px;
-    transition: color 0.3s;
-  }
-`;
-document.head.appendChild(mapStyle);
-
-
+// Live clock
 function updateClock() {
   const el = document.getElementById('duration-now');
   if (!el) return;
@@ -1980,4 +1638,3 @@ setInterval(updateClock, 1000);
 </script>
 </body>
 </html>
-
