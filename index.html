@@ -1764,8 +1764,9 @@ function getCityCoords(name) {
 }
 
 const LIVE_EXPIRE_MS = 10 * 60 * 1000; // 10 minutes
-let liveAlertMarkers = []; // { time, layers: [], cityKey }
+let liveAlertMarkers = []; // { addedAt, layers: [] }
 let knownAlertKeys   = new Set(); // "time|city" to detect new ones
+const boundaryCache  = {}; // city -> GeoJSON feature (cache fetched boundaries)
 
 function initMap() {
   if (alertMap) return;
@@ -1781,95 +1782,100 @@ function initMap() {
   }).addTo(alertMap);
 }
 
-// ── Static historical map (aggregated counts) ──
+// ── Fetch city boundary polygon from Nominatim ──
+async function fetchCityBoundary(cityHe) {
+  if (boundaryCache[cityHe] !== undefined) return boundaryCache[cityHe];
+  boundaryCache[cityHe] = null; // mark as requested (avoid double fetch)
+  try {
+    const coords = getCityCoords(cityHe);
+    if (!coords) return null;
+    // Use viewbox around known coords to improve accuracy
+    const [lat, lng] = coords;
+    const url = `https://nominatim.openstreetmap.org/search?` +
+      `q=${encodeURIComponent(cityHe)}&format=geojson&polygon_geojson=1&limit=1` +
+      `&countrycodes=il&viewbox=${lng-0.3},${lat+0.3},${lng+0.3},${lat-0.3}&bounded=1`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'SafeTime-AlertMap/1.0' } });
+    const data = await res.json();
+    const feat = data.features?.find(f =>
+      ['Polygon','MultiPolygon'].includes(f.geometry?.type)
+    ) || null;
+    boundaryCache[cityHe] = feat;
+    return feat;
+  } catch(e) {
+    return null;
+  }
+}
+
+// ── Static map - now empty (only live alerts shown) ──
 function renderMap(alerts) {
   if (!alertMap) initMap();
-
+  // Clear static layers — we only show live boundaries now
   mapLayers.forEach(l => alertMap.removeLayer(l));
   mapLayers = [];
+  const badge = document.getElementById('map-count-badge');
+  if (badge) badge.textContent = liveAlertMarkers.length > 0
+    ? `${liveAlertMarkers.length} התרעות פעילות`
+    : 'ממתין להתרעות...';
+}
 
-  const cityCnt = {};
-  alerts.forEach(a => (a.cities||[]).forEach(c => {
-    cityCnt[c] = (cityCnt[c]||0) + 1;
-  }));
+// ── Draw a city boundary polygon ──
+async function drawCityBoundary(city, alertTime) {
+  const boundary = await fetchCityBoundary(city);
+  const coords   = getCityCoords(city);
+  const now      = Date.now();
+  const layers   = [];
 
-  let placed = 0;
-  for (const [city, cnt] of Object.entries(cityCnt)) {
-    const coords = getCityCoords(city);
-    if (!coords) continue;
-    placed++;
+  const timeStr = new Date(alertTime * 1000).toLocaleTimeString('he-IL', {
+    timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit'
+  });
+  const tooltip = `🔴 <strong>${city}</strong><br>${timeStr}`;
 
-    const color = cnt >= 5 ? '#ff3d57' : cnt >= 2 ? '#ffb020' : '#00e5a0';
-
-    const border = L.circle(coords, {
-      radius: Math.min(8 + cnt * 2.5, 30) * 200,
-      color, weight: 2, opacity: 0.7,
-      fillColor: color, fillOpacity: 0.10
+  if (boundary) {
+    // Real polygon boundary
+    const poly = L.geoJSON(boundary, {
+      style: {
+        color: '#ff3d57',
+        weight: 2.5,
+        opacity: 1,
+        fillColor: '#ff3d57',
+        fillOpacity: 0.18,
+        className: 'live-boundary-poly'
+      }
+    }).bindTooltip(tooltip, {
+      direction: 'top', className: 'map-tooltip map-tooltip-live', sticky: true
     }).addTo(alertMap);
-
-    const dot = L.circleMarker(coords, {
-      radius: Math.min(5 + cnt, 14),
-      color, weight: 1.5, opacity: 1,
-      fillColor: color, fillOpacity: 0.85
+    layers.push(poly);
+  } else if (coords) {
+    // Fallback: circle if no boundary found
+    const circle = L.circle(coords, {
+      radius: 3500,
+      color: '#ff3d57', weight: 2.5, opacity: 1,
+      fillColor: '#ff3d57', fillOpacity: 0.18,
+      className: 'live-boundary-poly'
+    }).bindTooltip(tooltip, {
+      direction: 'top', className: 'map-tooltip map-tooltip-live'
     }).addTo(alertMap);
-
-    dot.bindTooltip(`<strong>${city}</strong><br>${cnt} התרעות`, {
-      direction: 'top', className: 'map-tooltip', offset: [0, -6]
-    });
-
-    mapLayers.push(border, dot);
+    layers.push(circle);
   }
 
-  const badge = document.getElementById('map-count-badge');
-  if (badge) badge.textContent = `${placed} ערים עם התרעות`;
+  if (layers.length) {
+    liveAlertMarkers.push({ addedAt: now, layers });
+    updateLiveBadge();
+  }
 }
 
-// ── Live alerts layer — pulse + auto-expire after 10 min ──
-function addLiveAlertToMap(alert) {
+// ── Add live alert to map ──
+async function addLiveAlertToMap(alert) {
   if (!alertMap) return;
-  const now = Date.now();
 
-  (alert.cities || []).forEach(city => {
+  for (const city of (alert.cities || [])) {
     const key = `${alert.time}|${city}`;
-    if (knownAlertKeys.has(key)) return; // already shown
+    if (knownAlertKeys.has(key)) continue;
     knownAlertKeys.add(key);
-
-    const coords = getCityCoords(city);
-    if (!coords) return;
-
-    // Pulsing outer ring
-    const pulse = L.circle(coords, {
-      radius: 6000,
-      color: '#ff3d57', weight: 2, opacity: 1,
-      fillColor: '#ff3d57', fillOpacity: 0.18,
-      className: 'live-pulse-ring'
-    }).addTo(alertMap);
-
-    // Solid inner dot
-    const dot = L.circleMarker(coords, {
-      radius: 10,
-      color: '#ff3d57', weight: 2, opacity: 1,
-      fillColor: '#ff3d57', fillOpacity: 1,
-      className: 'live-pulse-dot'
-    }).addTo(alertMap);
-
-    const alertTime = new Date(alert.time * 1000).toLocaleTimeString('he-IL', {
-      timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit'
-    });
-    dot.bindTooltip(`🔴 <strong>${city}</strong><br>התרעה חדשה · ${alertTime}`, {
-      direction: 'top', className: 'map-tooltip map-tooltip-live',
-      offset: [0, -8], permanent: false
-    });
-    dot.openTooltip();
-
-    liveAlertMarkers.push({
-      addedAt: now,
-      layers: [pulse, dot]
-    });
-  });
-
-  updateLiveBadge();
+    await drawCityBoundary(city, alert.time);
+  }
 }
+
 
 function expireLiveAlerts() {
   if (!alertMap) return;
@@ -1939,17 +1945,13 @@ mapStyle.textContent = `
     box-shadow: 0 0 12px rgba(255,61,87,0.3) !important;
   }
   .leaflet-tooltip-top::before { border-top-color: rgba(255,255,255,0.15) !important; }
-  @keyframes live-pulse {
-    0%   { stroke-opacity: 1; stroke-width: 2; }
-    50%  { stroke-opacity: 0.3; stroke-width: 4; }
-    100% { stroke-opacity: 1; stroke-width: 2; }
+  @keyframes boundary-pulse {
+    0%,100% { stroke-opacity: 1; fill-opacity: 0.18; }
+    50%      { stroke-opacity: 0.4; fill-opacity: 0.08; }
   }
-  .live-pulse-ring path { animation: live-pulse 1.4s ease-in-out infinite !important; }
-  @keyframes live-dot-pulse {
-    0%,100% { fill-opacity: 1; }
-    50%     { fill-opacity: 0.5; }
+  .live-boundary-poly {
+    animation: boundary-pulse 1.6s ease-in-out infinite;
   }
-  .live-pulse-dot path { animation: live-dot-pulse 1.4s ease-in-out infinite !important; }
   #map-live-badge {
     font-family: 'Share Tech Mono', monospace;
     font-size: 11px; letter-spacing: 1px;
