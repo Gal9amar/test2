@@ -1094,6 +1094,7 @@ footer {
       <div class="map-legend-item"><div class="map-legend-dot peak"></div>גבוה (5+)</div>
       <div class="map-legend-item"><div class="map-legend-dot warm"></div>בינוני (2-4)</div>
       <div class="map-legend-item"><div class="map-legend-dot safe"></div>נמוך (1)</div>
+      <div id="map-live-badge"></div>
       <div class="map-count-badge" id="map-count-badge">טוען...</div>
     </div>
   </div>
@@ -1432,7 +1433,10 @@ async function update() {
       initGauge();
       renderScore(calcScore(getAlertsInRange(selRange), selCity, selDur, selStartOffset));
       // Init map after DOM visible
-      setTimeout(() => renderMap(getAlertsInRange(selRange)), 100);
+      setTimeout(() => {
+        renderMap(getAlertsInRange(selRange));
+        startLiveMapPolling();
+      }, 100);
     } else {
       renderMap(getAlertsInRange(selRange));
     }
@@ -1759,6 +1763,10 @@ function getCityCoords(name) {
   return null;
 }
 
+const LIVE_EXPIRE_MS = 10 * 60 * 1000; // 10 minutes
+let liveAlertMarkers = []; // { time, layers: [], cityKey }
+let knownAlertKeys   = new Set(); // "time|city" to detect new ones
+
 function initMap() {
   if (alertMap) return;
   alertMap = L.map('alert-map', {
@@ -1768,20 +1776,18 @@ function initMap() {
     scrollWheelZoom: false,
     attributionControl: false
   });
-
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 14, minZoom: 6
   }).addTo(alertMap);
 }
 
+// ── Static historical map (aggregated counts) ──
 function renderMap(alerts) {
   if (!alertMap) initMap();
 
-  // Clear old layers
   mapLayers.forEach(l => alertMap.removeLayer(l));
   mapLayers = [];
 
-  // Count alerts per city
   const cityCnt = {};
   alerts.forEach(a => (a.cities||[]).forEach(c => {
     cityCnt[c] = (cityCnt[c]||0) + 1;
@@ -1793,34 +1799,22 @@ function renderMap(alerts) {
     if (!coords) continue;
     placed++;
 
-    // Color by count
     const color = cnt >= 5 ? '#ff3d57' : cnt >= 2 ? '#ffb020' : '#00e5a0';
-    const radius = Math.min(8 + cnt * 2.5, 30);
 
-    // Outer border circle (red stroke, transparent fill)
     const border = L.circle(coords, {
-      radius: radius * 200,
-      color: color,
-      weight: 2,
-      opacity: 0.85,
-      fillColor: color,
-      fillOpacity: 0.12
+      radius: Math.min(8 + cnt * 2.5, 30) * 200,
+      color, weight: 2, opacity: 0.7,
+      fillColor: color, fillOpacity: 0.10
     }).addTo(alertMap);
 
-    // Inner dot
     const dot = L.circleMarker(coords, {
       radius: Math.min(5 + cnt, 14),
-      color: color,
-      weight: 1.5,
-      opacity: 1,
-      fillColor: color,
-      fillOpacity: 0.9
+      color, weight: 1.5, opacity: 1,
+      fillColor: color, fillOpacity: 0.85
     }).addTo(alertMap);
 
     dot.bindTooltip(`<strong>${city}</strong><br>${cnt} התרעות`, {
-      direction: 'top',
-      className: 'map-tooltip',
-      offset: [0, -6]
+      direction: 'top', className: 'map-tooltip', offset: [0, -6]
     });
 
     mapLayers.push(border, dot);
@@ -1830,7 +1824,102 @@ function renderMap(alerts) {
   if (badge) badge.textContent = `${placed} ערים עם התרעות`;
 }
 
-// Add tooltip style
+// ── Live alerts layer — pulse + auto-expire after 10 min ──
+function addLiveAlertToMap(alert) {
+  if (!alertMap) return;
+  const now = Date.now();
+
+  (alert.cities || []).forEach(city => {
+    const key = `${alert.time}|${city}`;
+    if (knownAlertKeys.has(key)) return; // already shown
+    knownAlertKeys.add(key);
+
+    const coords = getCityCoords(city);
+    if (!coords) return;
+
+    // Pulsing outer ring
+    const pulse = L.circle(coords, {
+      radius: 6000,
+      color: '#ff3d57', weight: 2, opacity: 1,
+      fillColor: '#ff3d57', fillOpacity: 0.18,
+      className: 'live-pulse-ring'
+    }).addTo(alertMap);
+
+    // Solid inner dot
+    const dot = L.circleMarker(coords, {
+      radius: 10,
+      color: '#ff3d57', weight: 2, opacity: 1,
+      fillColor: '#ff3d57', fillOpacity: 1,
+      className: 'live-pulse-dot'
+    }).addTo(alertMap);
+
+    const alertTime = new Date(alert.time * 1000).toLocaleTimeString('he-IL', {
+      timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit'
+    });
+    dot.bindTooltip(`🔴 <strong>${city}</strong><br>התרעה חדשה · ${alertTime}`, {
+      direction: 'top', className: 'map-tooltip map-tooltip-live',
+      offset: [0, -8], permanent: false
+    });
+    dot.openTooltip();
+
+    liveAlertMarkers.push({
+      addedAt: now,
+      layers: [pulse, dot]
+    });
+  });
+
+  updateLiveBadge();
+}
+
+function expireLiveAlerts() {
+  if (!alertMap) return;
+  const now = Date.now();
+  const remaining = [];
+  liveAlertMarkers.forEach(m => {
+    if (now - m.addedAt > LIVE_EXPIRE_MS) {
+      m.layers.forEach(l => alertMap.removeLayer(l));
+    } else {
+      remaining.push(m);
+    }
+  });
+  liveAlertMarkers = remaining;
+  updateLiveBadge();
+}
+
+function updateLiveBadge() {
+  const badge = document.getElementById('map-live-badge');
+  if (!badge) return;
+  const n = liveAlertMarkers.length;
+  badge.textContent = n > 0 ? `🔴 ${n} התרעה פעילה` : '';
+  badge.style.color = n > 0 ? '#ff3d57' : 'transparent';
+}
+
+// ── Poll for NEW live alerts every 10s (separate from main REFRESH) ──
+let lastSeenAlertTime = 0;
+
+async function pollLiveAlerts() {
+  try {
+    const data = await pFetch(LIVE_URL);
+    if (!Array.isArray(data)) return;
+    const fresh = data.filter(a => !a.isDrill && a.time > lastSeenAlertTime);
+    if (fresh.length) {
+      lastSeenAlertTime = Math.max(...fresh.map(a => a.time));
+      fresh.forEach(addLiveAlertToMap);
+    }
+  } catch(e) { /* silent */ }
+  expireLiveAlerts();
+}
+
+// Kick off live polling after map init
+function startLiveMapPolling() {
+  // Set baseline so we don't flash old alerts on load
+  const src = historicalLoaded ? allHistorical : allAlerts;
+  if (src.length) lastSeenAlertTime = Math.max(...src.map(a => a.time));
+  pollLiveAlerts();
+  setInterval(pollLiveAlerts, 10000);
+}
+
+// Add tooltip + pulse styles
 const mapStyle = document.createElement('style');
 mapStyle.textContent = `
   .map-tooltip {
@@ -1844,7 +1933,27 @@ mapStyle.textContent = `
     padding: 6px 10px !important;
     direction: rtl !important;
   }
+  .map-tooltip-live {
+    border-color: rgba(255,61,87,0.5) !important;
+    box-shadow: 0 0 12px rgba(255,61,87,0.3) !important;
+  }
   .leaflet-tooltip-top::before { border-top-color: rgba(255,255,255,0.15) !important; }
+  @keyframes live-pulse {
+    0%   { stroke-opacity: 1; stroke-width: 2; }
+    50%  { stroke-opacity: 0.3; stroke-width: 4; }
+    100% { stroke-opacity: 1; stroke-width: 2; }
+  }
+  .live-pulse-ring path { animation: live-pulse 1.4s ease-in-out infinite !important; }
+  @keyframes live-dot-pulse {
+    0%,100% { fill-opacity: 1; }
+    50%     { fill-opacity: 0.5; }
+  }
+  .live-pulse-dot path { animation: live-dot-pulse 1.4s ease-in-out infinite !important; }
+  #map-live-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 1px;
+    transition: color 0.3s;
+  }
 `;
 document.head.appendChild(mapStyle);
 
