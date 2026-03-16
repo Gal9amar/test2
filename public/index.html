@@ -1002,7 +1002,7 @@ footer {
 <!-- ── HEADER ── -->
 <header>
   <div class="h-logo">זמן בטוח</div>
-  
+  <a href="/dashboard.html" style="margin-right:auto;font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--fg2);text-decoration:none;border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:4px 10px;transition:all .2s" onmouseover="this.style.color='var(--fg)';this.style.borderColor='rgba(255,255,255,.25)'" onmouseout="this.style.color='var(--fg2)';this.style.borderColor='rgba(255,255,255,.1)'">לוח מצב ארצי ↗</a>
 </header>
 
 <!-- ── DISCLAIMER ── -->
@@ -1937,11 +1937,55 @@ document.getElementById('cs-search')?.addEventListener('input', e => {
 });
 
 // ═══════════════════════════════════════════
+// GEOLOCATION — auto-select nearest city
+// ═══════════════════════════════════════════
+async function detectNearestCity() {
+  if (!navigator.geolocation) return;
+  // Only run if user hasn't already selected a city
+  if (selCity) return;
+
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude, longitude } = pos.coords;
+
+    // Need cities with lat/lng — fetch from /api/cities
+    let citiesGeo;
+    try {
+      citiesGeo = await fetch('/api/cities').then(r => r.json());
+    } catch(_) { return; }
+
+    // Find nearest city by Euclidean distance on lat/lng
+    let nearest = null, minDist = Infinity;
+    for (const [name, c] of Object.entries(citiesGeo)) {
+      if (!c.lat || !c.lng) continue;
+      const d = Math.pow(c.lat - latitude, 2) + Math.pow(c.lng - longitude, 2);
+      if (d < minDist) { minDist = d; nearest = name; }
+    }
+
+    if (!nearest) return;
+
+    // Set city input and trigger update — same as manual selection
+    const inp = document.getElementById('city-input');
+    inp.value = nearest;
+    inp.dispatchEvent(new Event('input'));
+
+    // Show subtle indicator
+    const msgEl = document.getElementById('city-msg');
+    if (msgEl && !selCity) {
+      // selCity gets set by the input handler above
+    }
+  }, () => {
+    // Permission denied or error — stay on כל הארץ silently
+  }, { timeout: 5000, maximumAge: 60000 });
+}
+
+// ═══════════════════════════════════════════
 // Boot
 // ═══════════════════════════════════════════
 update();
 setInterval(update, REFRESH);
 loadShelterCities();
+// After first data load, try geolocation
+setTimeout(detectNearestCity, 1500);
 </script>
 </body>
 </html>
