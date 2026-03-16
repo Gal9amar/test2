@@ -922,6 +922,9 @@ footer {
   color: var(--danger);
   letter-spacing: 1px;
   animation: pulse-banner 1s infinite;
+  max-height: 120px;
+  overflow-y: auto;
+  line-height: 1.7;
 }
 #alert-banner.visible { display: block; }
 @keyframes pulse-banner {
@@ -1244,9 +1247,8 @@ function showActiveBanner(alert) {
   const banner    = document.getElementById('alert-banner');
   const text      = document.getElementById('alert-banner-text');
   const allCities = alert.data || [];
-  const shown     = allCities.slice(0, 4).join(' · ');
-  const more      = allCities.length > 4 ? ` ועוד ${allCities.length - 4}` : '';
-  text.textContent = (alert.title || 'אזעקה פעילה') + (shown ? ` — ${shown}${more}` : '');
+  const cities    = allCities.join(' · ');
+  text.textContent = (alert.title || 'אזעקה פעילה') + (cities ? ` — ${cities}` : '');
   banner.classList.add('visible');
 }
 
