@@ -874,37 +874,34 @@ footer {
 #alert-feed {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
 }
 .feed-item {
-  background: var(--panel);
-  border: 1px solid var(--line2);
-  border-right: 3px solid var(--fg3);
-  border-radius: 8px;
-  padding: 10px 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  animation: fade-up .3s ease both;
 }
-.feed-item.cat-rockets   { border-right-color: var(--danger); }
-.feed-item.cat-uav       { border-right-color: var(--warn); }
-.feed-item.cat-terror    { border-right-color: #9b30ff; }
-.feed-item.cat-other     { border-right-color: var(--fg3); }
+.feed-item:last-child { border-bottom: none; }
 .feed-item-time {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--fg3);
   white-space: nowrap;
   min-width: 38px;
+  padding-top: 2px;
 }
 .feed-item-body { flex: 1; }
 .feed-item-title {
   font-family: var(--mono);
   font-size: 12px;
-  color: var(--fg);
   letter-spacing: .5px;
 }
+.feed-item.cat-rockets .feed-item-title  { color: var(--danger); }
+.feed-item.cat-uav .feed-item-title      { color: var(--warn); }
+.feed-item.cat-terror .feed-item-title   { color: #9b30ff; }
+.feed-item.cat-other .feed-item-title    { color: var(--fg2); }
 .feed-item-cities {
   font-size: 11px;
   color: var(--fg2);
@@ -952,12 +949,6 @@ footer {
 
 <!-- ── ACTIVE ALERT BANNER ── -->
 <div id="alert-banner">🔴 <span id="alert-banner-text">אזעקה פעילה</span></div>
-
-<!-- ── ALERT FEED ── -->
-<div class="feed-section">
-  <div class="feed-title">התרעות אחרונות</div>
-  <div id="alert-feed"><div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px">מחכה לנתונים...</div></div>
-</div>
 
 <!-- ── APP ── -->
 <div id="app" style="display:none">
@@ -1167,6 +1158,12 @@ footer {
 
   <!-- SHARE -->
   <button class="share-btn" id="share-btn" onclick="shareLink()">🔗 שתף את האתר</button>
+
+  <!-- RECENT ALERTS FEED -->
+  <div class="divider"><div class="divider-line"></div><div class="divider-txt">התרעות אחרונות</div><div class="divider-line"></div></div>
+  <div class="panel-box" id="alert-feed">
+    <div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px;text-align:center">מחכה לנתונים...</div>
+  </div>
 
 </div><!-- #app -->
 
