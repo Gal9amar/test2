@@ -477,7 +477,6 @@ const map = L.map('map', {
   zoom: 7,
   zoomControl: true,
   attributionControl: false,
-  preferCanvas: true, // faster for 1400+ markers
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -485,88 +484,91 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   opacity: 0.8,
 }).addTo(map);
 
-// city markers layer
-const markersLayer = L.layerGroup().addTo(map);
-// alert highlight layer
-const alertLayer = L.layerGroup().addTo(map);
+// GeoJSON layer (vulnerability polygons)
+const geojsonLayer = L.layerGroup().addTo(map);
+// alert highlight layer (on top)
+const alertLayer   = L.layerGroup().addTo(map);
 
-let citiesData  = {}; // name → {lat,lng,countdown,he}
-let cityMarkers = {}; // name → L.CircleMarker
+let citiesData    = {}; // name → {lat,lng,countdown,...}
+let cityPolygons  = {}; // name → L.GeoJSON feature layer
+let geojsonData   = null;
 
-function buildCityMarker(name, city) {
-  const color  = countdownColor(city.countdown);
-  const radius = city.countdown === 0 ? 5 : city.countdown <= 30 ? 4 : 3;
-  const m = L.circleMarker([city.lat, city.lng], {
-    radius,
-    fillColor: color,
-    fillOpacity: 0.75,
-    color: 'transparent',
-    weight: 0,
-  });
-  m.bindTooltip(
-    `<strong>${name}</strong><br>מרחב מוגן: ${countdownLabel(city.countdown)}`,
-    { className: 'city-tooltip', direction: 'top', offset: [0, -4] }
-  );
-  m.on('click', () => selectCity(name, city));
-  return m;
+function polygonStyle(name) {
+  const city  = citiesData[name];
+  const color = city ? countdownColor(city.countdown) : '#1a1f2e';
+  const known = !!city;
+  return {
+    fillColor:   color,
+    fillOpacity: known ? 0.55 : 0.12,
+    color:       known ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.04)',
+    weight:      0.5,
+  };
+}
+
+function buildGeoJSON(geoData) {
+  geojsonLayer.clearLayers();
+  cityPolygons = {};
+
+  L.geoJSON(geoData, {
+    style: feature => polygonStyle(feature.properties.name),
+    onEachFeature: (feature, layer) => {
+      const name = feature.properties.name;
+      cityPolygons[name] = layer;
+      const city = citiesData[name];
+      const tip  = city
+        ? `<strong>${name}</strong><br>מרחב מוגן: ${countdownLabel(city.countdown)}`
+        : `<strong>${name}</strong>`;
+      layer.bindTooltip(tip, { className: 'city-tooltip', sticky: true });
+      layer.on('click', () => {
+        if (city) selectCity(name, city);
+      });
+    },
+  }).addTo(geojsonLayer);
 }
 
 function loadCities(data) {
-  markersLayer.clearLayers();
-  cityMarkers = {};
-  citiesData  = data;
+  citiesData = data;
 
   // Populate search datalist
   const dl = document.getElementById('city-dl');
   dl.innerHTML = '';
   Object.keys(data).sort((a,b) => a.localeCompare(b,'he')).forEach(name => {
-    const o = document.createElement('option');
-    o.value = name;
-    dl.appendChild(o);
+    const o = document.createElement('option'); o.value = name; dl.appendChild(o);
   });
 
-  // Draw markers
-  Object.entries(data).forEach(([name, city]) => {
-    if (!city.lat || !city.lng) return;
-    const m = buildCityMarker(name, city);
-    m.addTo(markersLayer);
-    cityMarkers[name] = m;
-  });
+  // If GeoJSON already loaded, rebuild; otherwise fetch it
+  if (geojsonData) {
+    buildGeoJSON(geojsonData);
+  } else {
+    fetch('https://oref.live/static/israel.geojson?h=1433109d')
+      .then(r => r.json())
+      .then(geoData => {
+        geojsonData = geoData;
+        buildGeoJSON(geoData);
+      })
+      .catch(() => console.warn('GeoJSON unavailable'));
+  }
 }
 
-// Highlight alert cities on map
-let alertMarkers = [];
+// Alert highlight — flash polygons red
+let alertHighlighted = [];
 function highlightAlertCities(cities) {
-  alertMarkers.forEach(m => alertLayer.removeLayer(m));
-  alertMarkers = [];
+  clearAlertHighlight();
   cities.forEach(name => {
-    const city = citiesData[name];
-    if (!city?.lat) return;
-    const pulse = L.circleMarker([city.lat, city.lng], {
-      radius: 14,
-      fillColor: '#ff2244',
-      fillOpacity: 0.25,
-      color: '#ff2244',
-      weight: 1.5,
-    });
-    alertLayer.addLayer(pulse);
-    alertMarkers.push(pulse);
-    // inner dot
-    const dot = L.circleMarker([city.lat, city.lng], {
-      radius: 5,
-      fillColor: '#ff2244',
-      fillOpacity: 1,
-      color: 'rgba(255,255,255,.3)',
-      weight: 1,
-    });
-    alertLayer.addLayer(dot);
-    alertMarkers.push(dot);
+    const layer = cityPolygons[name];
+    if (!layer) return;
+    layer.setStyle({ fillColor: '#ff2244', fillOpacity: 0.75, color: '#ff2244', weight: 1.5 });
+    alertHighlighted.push(name);
   });
 }
 
 function clearAlertHighlight() {
-  alertMarkers.forEach(m => alertLayer.removeLayer(m));
-  alertMarkers = [];
+  alertHighlighted.forEach(name => {
+    const layer = cityPolygons[name];
+    if (layer) layer.setStyle(polygonStyle(name));
+  });
+  alertHighlighted = [];
+  alertLayer.clearLayers();
 }
 
 // ══════════════════════════════════════
@@ -579,8 +581,15 @@ function selectCity(name, city) {
     `<span class="city-name">${name}</span> — ` +
     `<span class="city-countdown" style="color:${color}">${label}</span>`;
   document.getElementById('city-search').value = name;
-  map.setView([city.lat, city.lng], 11, { animate: true });
-  cityMarkers[name]?.openTooltip();
+
+  // Zoom to polygon if available, else lat/lng
+  const layer = cityPolygons[name];
+  if (layer) {
+    map.fitBounds(layer.getBounds(), { maxZoom: 12, animate: true });
+    layer.openTooltip();
+  } else if (city.lat) {
+    map.setView([city.lat, city.lng], 11, { animate: true });
+  }
 }
 
 document.getElementById('city-search').addEventListener('input', e => {
@@ -734,24 +743,29 @@ async function boot() {
   const fill = document.getElementById('loader-fill');
   const txt  = document.getElementById('loader-txt');
 
-  fill.style.width = '20%';
-  txt.textContent = 'טוען נתוני ישובים...';
+  fill.style.width = '15%';
+  txt.textContent = 'טוען נתוני ישובים ומפה...';
 
-  const [citiesResp] = await Promise.all([
+  // Load cities + GeoJSON in parallel
+  const [citiesResp, geoResp] = await Promise.all([
     fetch('/api/cities').then(r => r.json()),
+    fetch('https://oref.live/static/israel.geojson?h=1433109d').then(r => r.json()).catch(() => null),
   ]);
 
-  fill.style.width = '60%';
+  fill.style.width = '55%';
   txt.textContent = 'בונה מפת פגיעות...';
+
+  citiesData  = citiesResp;
+  if (geoResp) { geojsonData = geoResp; }
 
   loadCities(citiesResp);
 
-  fill.style.width = '80%';
+  fill.style.width = '75%';
   txt.textContent = 'מחבר לזרם נתונים...';
 
   connectSSE();
 
-  fill.style.width = '90%';
+  fill.style.width = '88%';
   txt.textContent = 'טוען סטטיסטיקות...';
 
   await loadStats();
