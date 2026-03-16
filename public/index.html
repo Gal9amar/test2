@@ -1228,27 +1228,35 @@ footer {
     </div>
   </div>
 
-  <!-- CITIES SHELTER + FEED — side by side (ישובים פריוריטי גבוה יותר) -->
+
+  <!-- SHELTER CARD + FEED — side by side -->
   <div class="two-col" style="margin-top:8px">
     <div>
-      <div class="divider"><div class="divider-line"></div><div class="divider-txt">זמן מרחב מוגן לפי ישוב</div><div class="divider-line"></div></div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
-        <input class="city-search-box" id="cs-search" type="text" placeholder="חיפוש ישוב..." autocomplete="off" style="margin-bottom:0;flex:1">
-        <button id="cs-loc-btn" onclick="csLocate()" title="זהה מיקום" style="flex-shrink:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--fg2);font-size:13px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,255,255,.25)';this.style.color='var(--fg)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--fg2)'">📍</button>
-        <button id="cs-reset-btn" onclick="csReset()" title="אפס מיקום" style="display:none;flex-shrink:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--fg3);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--fg3)'">✕</button>
-      </div>
-      <div id="cs-loc-msg" style="font-family:var(--mono);font-size:10px;color:var(--fg3);margin-bottom:8px;min-height:14px"></div>
-      <div class="cs-filter-row">
-        <div class="cs-chip on" data-cd="" onclick="csFilter('',this)">הכל</div>
-        <div class="cs-chip" data-cd="0"  onclick="csFilter('0',this)">מיידי</div>
-        <div class="cs-chip" data-cd="15" onclick="csFilter('15',this)">15 שנ׳</div>
-        <div class="cs-chip" data-cd="30" onclick="csFilter('30',this)">30 שנ׳</div>
-        <div class="cs-chip" data-cd="45" onclick="csFilter('45',this)">45 שנ׳</div>
-        <div class="cs-chip" data-cd="60" onclick="csFilter('60',this)">דקה</div>
-        <div class="cs-chip" data-cd="90" onclick="csFilter('90',this)">דקה½+</div>
-      </div>
-      <div id="cs-list-wrap">
-        <div class="city-shelter-list" id="cs-list"><div style="color:var(--fg3);font-size:11px;font-family:var(--mono);padding:8px">טוען...</div></div>
+      <div class="divider"><div class="divider-line"></div><div class="divider-txt">זמן מרחב מוגן</div><div class="divider-line"></div></div>
+      <div class="panel-box" id="shelter-card">
+        <!-- default: no location -->
+        <div id="shelter-no-loc" style="text-align:center;padding:16px 8px">
+          <div style="font-size:28px;margin-bottom:10px">📍</div>
+          <div style="font-size:13px;color:var(--fg2);margin-bottom:14px">לחץ לזיהוי המיקום שלך</div>
+          <button onclick="csLocate()" style="background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:9px 20px;color:var(--fg);font-family:var(--mono);font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='var(--line2)'">זהה מיקום</button>
+        </div>
+        <!-- filled after location -->
+        <div id="shelter-result" style="display:none;padding:4px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <div style="font-size:13px;color:var(--fg2);font-family:var(--mono)">📍 <span id="shelter-city-name" style="color:var(--fg)"></span></div>
+            <button onclick="csReset()" style="background:none;border:none;color:var(--fg3);font-size:11px;font-family:var(--mono);cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--fg3)'">✕ אפס</button>
+          </div>
+          <div style="text-align:center;padding:12px 0 16px">
+            <div id="shelter-time-big" style="font-family:var(--mono);font-size:52px;line-height:1;font-weight:700"></div>
+            <div id="shelter-time-lbl" style="font-size:13px;color:var(--fg2);margin-top:8px">זמן להגיע למרחב מוגן</div>
+          </div>
+          <div id="shelter-immediate" style="display:none;background:rgba(255,34,68,.1);border:1px solid var(--danger);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--danger);text-align:center;letter-spacing:.5px">
+            ⚠️ כניסה מיידית למרחב מוגן
+          </div>
+          <div style="margin-top:16px;text-align:center">
+            <button onclick="csLocate()" id="cs-loc-btn" style="background:none;border:1px solid var(--line);border-radius:6px;padding:6px 14px;color:var(--fg3);font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)';this.style.borderColor='var(--line2)'" onmouseout="this.style.color='var(--fg3)';this.style.borderColor='var(--line)'">📍 עדכן מיקום</button>
+          </div>
+        </div>
       </div>
     </div>
     <div>
@@ -1898,58 +1906,9 @@ setInterval(updateClock, 1000);
 // ═══════════════════════════════════════════
 // CITY SHELTER LIST
 // ═══════════════════════════════════════════
-const CS_COLOR = {0:'#ff2244',15:'#ff5500',30:'#ff8c00',45:'#ffc200',60:'#a8e050',90:'#30d080',180:'#30d080'};
-const CS_LABEL = {0:'מיידי',15:'15 שנ׳',30:'30 שנ׳',45:'45 שנ׳',60:'דקה',90:'דקה וחצי',180:'3 דק׳'};
-let csAll = [], csFilter_ = '', csSearch_ = '', csAlerts = new Set();
-
-async function loadShelterCities() {
-  try {
-    const data = await fetch('/api/cities').then(r => r.json());
-    csAll = Object.entries(data)
-      .map(([name, c]) => ({ name, countdown: c.countdown }))
-      .sort((a, b) => a.countdown - b.countdown || a.name.localeCompare(b.name, 'he'));
-    renderShelterList();
-  } catch(_) {}
-}
-
-function renderShelterList() {
-  let rows = csAll;
-  if (csFilter_ !== '') rows = rows.filter(c => String(c.countdown) === csFilter_);
-  if (csSearch_.trim()) rows = rows.filter(c => c.name.includes(csSearch_.trim()));
-  const el = document.getElementById('cs-list');
-  if (!rows.length) { el.innerHTML = '<div style="color:var(--fg3);font-size:11px;font-family:var(--mono);padding:8px">לא נמצאו ישובים</div>'; return; }
-  el.innerHTML = rows.map(c => {
-    const col = CS_COLOR[c.countdown] || '#30d080';
-    const lbl = CS_LABEL[c.countdown] || c.countdown + ' שנ׳';
-    const isA = csAlerts.has(c.name);
-    return `<div class="city-shelter-row${isA ? ' alert-active' : ''}">
-      <div class="cs-dot" style="background:${col}${isA ? ';box-shadow:0 0 5px '+col : ''}"></div>
-      <div class="cs-name">${c.name}</div>
-      <div class="cs-time" style="color:${col}">${lbl}</div>
-    </div>`;
-  }).join('');
-}
-
-function csFilter(cd, el) {
-  csFilter_ = cd;
-  document.querySelectorAll('.cs-chip').forEach(c => c.classList.remove('on'));
-  el.classList.add('on');
-  renderShelterList();
-}
-
-document.getElementById('cs-search')?.addEventListener('input', e => {
-  csSearch_ = e.target.value;
-  renderShelterList();
-});
-
+// SHELTER CARD — מרחב מוגן למיקום המשתמש
 // ═══════════════════════════════════════════
-// GEOLOCATION — auto-select nearest city
-// ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-// GEOLOCATION — shared for gauge + shelter list
-// ═══════════════════════════════════════════
-let _citiesGeo = null; // cached from /api/cities
-let _nearestCity = null;
+let _citiesGeo = null;
 
 async function getCitiesGeo() {
   if (_citiesGeo) return _citiesGeo;
@@ -1967,128 +1926,75 @@ function findNearest(lat, lng, cities) {
   return nearest;
 }
 
-// Apply nearest city to gauge city-input
-function applyNearestToGauge(name) {
-  const inp = document.getElementById('city-input');
-  inp.value = name;
-  inp.dispatchEvent(new Event('input'));
-}
-
-// Apply nearest city to shelter list (filter to nearby area)
-function applyNearestToShelter(name, cities) {
-  _nearestCity = name;
-  const city = cities[name];
+function showShelterCard(cityName, cities) {
+  const city = cities[cityName];
   if (!city) return;
+  const cd    = city.countdown;
+  const color = cd === 0 ? '#ff2244' : cd <= 15 ? '#ff5500' : cd <= 30 ? '#ff8c00' : cd <= 45 ? '#ffc200' : cd <= 60 ? '#a8e050' : '#30d080';
+  const label = cd === 0 ? 'מיידי' : cd < 60 ? cd + ' שנ׳' : cd === 60 ? 'דקה' : 'דקה וחצי';
 
-  // Filter: show ישובים within ~0.3 degree radius (~30km)
-  const RADIUS = 0.3;
-  csNearbySet = new Set(
-    Object.entries(cities)
-      .filter(([, c]) => c.lat && c.lng &&
-        Math.abs(c.lat - city.lat) <= RADIUS &&
-        Math.abs(c.lng - city.lng) <= RADIUS)
-      .map(([name]) => name)
-  );
+  document.getElementById('shelter-no-loc').style.display  = 'none';
+  document.getElementById('shelter-result').style.display  = 'block';
+  document.getElementById('shelter-city-name').textContent = cityName;
+  document.getElementById('shelter-time-big').textContent  = cd === 0 ? '⚠️' : label;
+  document.getElementById('shelter-time-big').style.color  = color;
+  document.getElementById('shelter-immediate').style.display = cd === 0 ? 'block' : 'none';
+  document.getElementById('shelter-time-lbl').style.display  = cd === 0 ? 'none'  : 'block';
 
-  // Highlight nearest + show reset button
-  document.getElementById('cs-search').value = '';
-  csSearch_ = '';
-  document.getElementById('cs-reset-btn').style.display = 'block';
-  document.getElementById('cs-loc-msg').textContent = `📍 מציג ישובים ליד ${name}`;
-  renderShelterList();
-}
-
-let csNearbySet = null; // null = show all, Set = show only nearby
-
-// Override renderShelterList to support nearby filter
-const _origRenderShelterList = renderShelterList;
-
-function renderShelterList() {
-  let rows = csAll;
-  if (csNearbySet) rows = rows.filter(c => csNearbySet.has(c.name));
-  if (csFilter_ !== '') rows = rows.filter(c => String(c.countdown) === csFilter_);
-  if (csSearch_.trim()) rows = rows.filter(c => c.name.includes(csSearch_.trim()));
-  const el = document.getElementById('cs-list');
-  if (!rows.length) {
-    el.innerHTML = '<div style="color:var(--fg3);font-size:11px;font-family:var(--mono);padding:8px">לא נמצאו ישובים</div>';
-    return;
+  // גם מגדיר עיר בגאוג׳ אם עוד לא נבחרה
+  if (!selCity) {
+    const inp = document.getElementById('city-input');
+    inp.value = cityName;
+    inp.dispatchEvent(new Event('input'));
   }
-  el.innerHTML = rows.map(c => {
-    const col = CS_COLOR[c.countdown] || '#30d080';
-    const lbl = CS_LABEL[c.countdown] || c.countdown + ' שנ׳';
-    const isA = csAlerts.has(c.name);
-    const isMe = c.name === _nearestCity;
-    return `<div class="city-shelter-row${isA ? ' alert-active' : ''}">
-      <div class="cs-dot" style="background:${col}${isA ? ';box-shadow:0 0 5px '+col : ''}"></div>
-      <div class="cs-name" style="${isMe ? 'font-weight:700;color:var(--safe)' : ''}">${c.name}${isMe ? ' 📍' : ''}</div>
-      <div class="cs-time" style="color:${col}">${lbl}</div>
-    </div>`;
-  }).join('');
 }
 
-// Reset location filter
 function csReset() {
-  csNearbySet = null;
-  _nearestCity = null;
-  document.getElementById('cs-reset-btn').style.display = 'none';
-  document.getElementById('cs-loc-msg').textContent = '';
-  renderShelterList();
+  document.getElementById('shelter-no-loc').style.display = 'block';
+  document.getElementById('shelter-result').style.display  = 'none';
 }
 
-// Locate button — shelter list
 async function csLocate() {
-  if (!navigator.geolocation) {
-    document.getElementById('cs-loc-msg').textContent = 'הדפדפן לא תומך במיקום';
-    return;
-  }
+  if (!navigator.geolocation) return;
   const btn = document.getElementById('cs-loc-btn');
-  btn.textContent = '⏳';
-  document.getElementById('cs-loc-msg').textContent = 'מזהה מיקום...';
-
+  if (btn) btn.textContent = '⏳ מזהה...';
   navigator.geolocation.getCurrentPosition(async pos => {
-    btn.textContent = '📍';
+    if (btn) btn.textContent = '📍 עדכן מיקום';
     const cities = await getCitiesGeo().catch(() => null);
-    if (!cities) { document.getElementById('cs-loc-msg').textContent = 'שגיאה בטעינת נתונים'; return; }
+    if (!cities) return;
     const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
-    if (nearest) applyNearestToShelter(nearest, cities);
+    if (nearest) showShelterCard(nearest, cities);
   }, () => {
-    btn.textContent = '📍';
-    document.getElementById('cs-loc-msg').textContent = 'לא ניתן לקבל מיקום — בדוק הרשאות';
+    if (btn) btn.textContent = '📍 עדכן מיקום';
   }, { timeout: 8000, maximumAge: 60000 });
 }
 
-// Auto-detect on load (both gauge + shelter)
-async function detectNearestCity(force = false) {
-  if (!navigator.geolocation) return;
-  if (!force && selCity) return; // gauge already has a city
-
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const cities = await getCitiesGeo().catch(() => null);
-    if (!cities) return;
-    const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
-    if (!nearest) return;
-
-    // Apply to gauge
-    if (!selCity) applyNearestToGauge(nearest);
-
-    // Apply to shelter list
-    applyNearestToShelter(nearest, cities);
-
-  }, () => {}, { timeout: 5000, maximumAge: 60000 });
-}
-
-// Locate button — gauge
 async function gaugeLocate() {
   if (!navigator.geolocation) return;
   const btn = document.getElementById('gauge-loc-btn');
-  btn.textContent = '⏳';
+  if (btn) btn.textContent = '⏳';
   navigator.geolocation.getCurrentPosition(async pos => {
-    btn.textContent = '📍';
+    if (btn) btn.textContent = '📍';
     const cities = await getCitiesGeo().catch(() => null);
     if (!cities) return;
     const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
-    if (nearest) { applyNearestToGauge(nearest); applyNearestToShelter(nearest, cities); }
-  }, () => { btn.textContent = '📍'; }, { timeout: 8000, maximumAge: 60000 });
+    if (nearest) {
+      const inp = document.getElementById('city-input');
+      inp.value = nearest;
+      inp.dispatchEvent(new Event('input'));
+      showShelterCard(nearest, cities);
+    }
+  }, () => { if (btn) btn.textContent = '📍'; }, { timeout: 8000, maximumAge: 60000 });
+}
+
+async function detectNearestCity() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const cities = await getCitiesGeo().catch(() => null);
+    if (!cities) return;
+    const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
+    if (nearest) showShelterCard(nearest, cities);
+  }, () => {}, { timeout: 5000, maximumAge: 60000 });
 }
 
 // ═══════════════════════════════════════════
@@ -2096,7 +2002,6 @@ async function gaugeLocate() {
 // ═══════════════════════════════════════════
 update();
 setInterval(update, REFRESH);
-loadShelterCities();
 setTimeout(detectNearestCity, 1500);
 </script>
 </body>
