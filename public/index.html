@@ -1035,6 +1035,7 @@ footer {
         <span class="city-icon" id="city-status"></span>
         <datalist id="city-dl"></datalist>
       </div>
+      <button onclick="gaugeLocate()" title="זהה מיקום" id="gauge-loc-btn" style="background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:7px 11px;color:var(--fg2);font-size:13px;cursor:pointer;transition:all .15s;flex-shrink:0" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg2)'">📍</button>
       <button class="city-clear-btn" id="city-clear" onclick="clearCity()" style="display:none">נקה</button>
     </div>
     <div class="city-msg" id="city-msg"></div>
@@ -1231,7 +1232,12 @@ footer {
   <div class="two-col" style="margin-top:8px">
     <div>
       <div class="divider"><div class="divider-line"></div><div class="divider-txt">זמן מרחב מוגן לפי ישוב</div><div class="divider-line"></div></div>
-      <input class="city-search-box" id="cs-search" type="text" placeholder="חיפוש ישוב..." autocomplete="off">
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+        <input class="city-search-box" id="cs-search" type="text" placeholder="חיפוש ישוב..." autocomplete="off" style="margin-bottom:0;flex:1">
+        <button id="cs-loc-btn" onclick="csLocate()" title="זהה מיקום" style="flex-shrink:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--fg2);font-size:13px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,255,255,.25)';this.style.color='var(--fg)'" onmouseout="this.style.borderColor='var(--line)';this.style.color='var(--fg2)'">📍</button>
+        <button id="cs-reset-btn" onclick="csReset()" title="אפס מיקום" style="display:none;flex-shrink:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 11px;color:var(--fg3);font-size:11px;font-family:var(--mono);cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--fg3)'">✕</button>
+      </div>
+      <div id="cs-loc-msg" style="font-family:var(--mono);font-size:10px;color:var(--fg3);margin-bottom:8px;min-height:14px"></div>
       <div class="cs-filter-row">
         <div class="cs-chip on" data-cd="" onclick="csFilter('',this)">הכל</div>
         <div class="cs-chip" data-cd="0"  onclick="csFilter('0',this)">מיידי</div>
@@ -1939,43 +1945,150 @@ document.getElementById('cs-search')?.addEventListener('input', e => {
 // ═══════════════════════════════════════════
 // GEOLOCATION — auto-select nearest city
 // ═══════════════════════════════════════════
-async function detectNearestCity() {
-  if (!navigator.geolocation) return;
-  // Only run if user hasn't already selected a city
-  if (selCity) return;
+// ═══════════════════════════════════════════
+// GEOLOCATION — shared for gauge + shelter list
+// ═══════════════════════════════════════════
+let _citiesGeo = null; // cached from /api/cities
+let _nearestCity = null;
+
+async function getCitiesGeo() {
+  if (_citiesGeo) return _citiesGeo;
+  _citiesGeo = await fetch('/api/cities').then(r => r.json());
+  return _citiesGeo;
+}
+
+function findNearest(lat, lng, cities) {
+  let nearest = null, minDist = Infinity;
+  for (const [name, c] of Object.entries(cities)) {
+    if (!c.lat || !c.lng) continue;
+    const d = (c.lat - lat) ** 2 + (c.lng - lng) ** 2;
+    if (d < minDist) { minDist = d; nearest = name; }
+  }
+  return nearest;
+}
+
+// Apply nearest city to gauge city-input
+function applyNearestToGauge(name) {
+  const inp = document.getElementById('city-input');
+  inp.value = name;
+  inp.dispatchEvent(new Event('input'));
+}
+
+// Apply nearest city to shelter list (filter to nearby area)
+function applyNearestToShelter(name, cities) {
+  _nearestCity = name;
+  const city = cities[name];
+  if (!city) return;
+
+  // Filter: show ישובים within ~0.3 degree radius (~30km)
+  const RADIUS = 0.3;
+  csNearbySet = new Set(
+    Object.entries(cities)
+      .filter(([, c]) => c.lat && c.lng &&
+        Math.abs(c.lat - city.lat) <= RADIUS &&
+        Math.abs(c.lng - city.lng) <= RADIUS)
+      .map(([name]) => name)
+  );
+
+  // Highlight nearest + show reset button
+  document.getElementById('cs-search').value = '';
+  csSearch_ = '';
+  document.getElementById('cs-reset-btn').style.display = 'block';
+  document.getElementById('cs-loc-msg').textContent = `📍 מציג ישובים ליד ${name}`;
+  renderShelterList();
+}
+
+let csNearbySet = null; // null = show all, Set = show only nearby
+
+// Override renderShelterList to support nearby filter
+const _origRenderShelterList = renderShelterList;
+
+function renderShelterList() {
+  let rows = csAll;
+  if (csNearbySet) rows = rows.filter(c => csNearbySet.has(c.name));
+  if (csFilter_ !== '') rows = rows.filter(c => String(c.countdown) === csFilter_);
+  if (csSearch_.trim()) rows = rows.filter(c => c.name.includes(csSearch_.trim()));
+  const el = document.getElementById('cs-list');
+  if (!rows.length) {
+    el.innerHTML = '<div style="color:var(--fg3);font-size:11px;font-family:var(--mono);padding:8px">לא נמצאו ישובים</div>';
+    return;
+  }
+  el.innerHTML = rows.map(c => {
+    const col = CS_COLOR[c.countdown] || '#30d080';
+    const lbl = CS_LABEL[c.countdown] || c.countdown + ' שנ׳';
+    const isA = csAlerts.has(c.name);
+    const isMe = c.name === _nearestCity;
+    return `<div class="city-shelter-row${isA ? ' alert-active' : ''}">
+      <div class="cs-dot" style="background:${col}${isA ? ';box-shadow:0 0 5px '+col : ''}"></div>
+      <div class="cs-name" style="${isMe ? 'font-weight:700;color:var(--safe)' : ''}">${c.name}${isMe ? ' 📍' : ''}</div>
+      <div class="cs-time" style="color:${col}">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+// Reset location filter
+function csReset() {
+  csNearbySet = null;
+  _nearestCity = null;
+  document.getElementById('cs-reset-btn').style.display = 'none';
+  document.getElementById('cs-loc-msg').textContent = '';
+  renderShelterList();
+}
+
+// Locate button — shelter list
+async function csLocate() {
+  if (!navigator.geolocation) {
+    document.getElementById('cs-loc-msg').textContent = 'הדפדפן לא תומך במיקום';
+    return;
+  }
+  const btn = document.getElementById('cs-loc-btn');
+  btn.textContent = '⏳';
+  document.getElementById('cs-loc-msg').textContent = 'מזהה מיקום...';
 
   navigator.geolocation.getCurrentPosition(async pos => {
-    const { latitude, longitude } = pos.coords;
+    btn.textContent = '📍';
+    const cities = await getCitiesGeo().catch(() => null);
+    if (!cities) { document.getElementById('cs-loc-msg').textContent = 'שגיאה בטעינת נתונים'; return; }
+    const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
+    if (nearest) applyNearestToShelter(nearest, cities);
+  }, () => {
+    btn.textContent = '📍';
+    document.getElementById('cs-loc-msg').textContent = 'לא ניתן לקבל מיקום — בדוק הרשאות';
+  }, { timeout: 8000, maximumAge: 60000 });
+}
 
-    // Need cities with lat/lng — fetch from /api/cities
-    let citiesGeo;
-    try {
-      citiesGeo = await fetch('/api/cities').then(r => r.json());
-    } catch(_) { return; }
+// Auto-detect on load (both gauge + shelter)
+async function detectNearestCity(force = false) {
+  if (!navigator.geolocation) return;
+  if (!force && selCity) return; // gauge already has a city
 
-    // Find nearest city by Euclidean distance on lat/lng
-    let nearest = null, minDist = Infinity;
-    for (const [name, c] of Object.entries(citiesGeo)) {
-      if (!c.lat || !c.lng) continue;
-      const d = Math.pow(c.lat - latitude, 2) + Math.pow(c.lng - longitude, 2);
-      if (d < minDist) { minDist = d; nearest = name; }
-    }
-
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const cities = await getCitiesGeo().catch(() => null);
+    if (!cities) return;
+    const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
     if (!nearest) return;
 
-    // Set city input and trigger update — same as manual selection
-    const inp = document.getElementById('city-input');
-    inp.value = nearest;
-    inp.dispatchEvent(new Event('input'));
+    // Apply to gauge
+    if (!selCity) applyNearestToGauge(nearest);
 
-    // Show subtle indicator
-    const msgEl = document.getElementById('city-msg');
-    if (msgEl && !selCity) {
-      // selCity gets set by the input handler above
-    }
-  }, () => {
-    // Permission denied or error — stay on כל הארץ silently
-  }, { timeout: 5000, maximumAge: 60000 });
+    // Apply to shelter list
+    applyNearestToShelter(nearest, cities);
+
+  }, () => {}, { timeout: 5000, maximumAge: 60000 });
+}
+
+// Locate button — gauge
+async function gaugeLocate() {
+  if (!navigator.geolocation) return;
+  const btn = document.getElementById('gauge-loc-btn');
+  btn.textContent = '⏳';
+  navigator.geolocation.getCurrentPosition(async pos => {
+    btn.textContent = '📍';
+    const cities = await getCitiesGeo().catch(() => null);
+    if (!cities) return;
+    const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
+    if (nearest) { applyNearestToGauge(nearest); applyNearestToShelter(nearest, cities); }
+  }, () => { btn.textContent = '📍'; }, { timeout: 8000, maximumAge: 60000 });
 }
 
 // ═══════════════════════════════════════════
@@ -1984,7 +2097,6 @@ async function detectNearestCity() {
 update();
 setInterval(update, REFRESH);
 loadShelterCities();
-// After first data load, try geolocation
 setTimeout(detectNearestCity, 1500);
 </script>
 </body>
