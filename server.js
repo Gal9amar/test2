@@ -248,6 +248,31 @@ app.get('/api/historical-all', async (req, res) => {
 });
 
 // ─────────────────────────────────────────
+// GET /api/cities  — tzevaadom cities with countdown + coords
+// ─────────────────────────────────────────
+let citiesCache   = null;
+let citiesCacheAt = 0;
+const CITIES_TTL  = 60 * 60 * 1000; // 1 hour
+
+app.get('/api/cities', async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  const now = Date.now();
+  if (citiesCache && now - citiesCacheAt < CITIES_TTL) return res.json(citiesCache);
+  try {
+    const r    = await fetch('https://www.tzevaadom.co.il/static/cities.json', {
+      signal: AbortSignal.timeout(10000), headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    const data = await r.json();
+    citiesCache   = data.cities; // flat dict: name → {lat,lng,countdown,area,he,en}
+    citiesCacheAt = now;
+    res.json(citiesCache);
+  } catch (_) {
+    if (citiesCache) return res.json(citiesCache);
+    res.status(502).json({});
+  }
+});
+
+// ─────────────────────────────────────────
 // Serve static files (index.html, etc.)
 // ─────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
