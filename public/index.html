@@ -1258,6 +1258,14 @@ footer {
           </div>
         </div>
       </div>
+
+      <!-- רשימת ישובים + חיפוש -->
+      <div style="margin-top:14px">
+        <input id="cs-search" type="text" placeholder="חיפוש ישוב..." autocomplete="off"
+          style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--fg);outline:none;direction:rtl;margin-bottom:8px;transition:border-color .15s"
+          onfocus="this.style.borderColor='var(--line2)'" onblur="this.style.borderColor='var(--line)'">
+        <div id="cs-list" style="max-height:320px;overflow-y:auto"></div>
+      </div>
     </div>
     <div>
       <div class="divider"><div class="divider-line"></div><div class="divider-txt">התרעות אחרונות</div><div class="divider-line"></div></div>
@@ -1906,9 +1914,12 @@ setInterval(updateClock, 1000);
 // ═══════════════════════════════════════════
 // CITY SHELTER LIST
 // ═══════════════════════════════════════════
-// SHELTER CARD — מרחב מוגן למיקום המשתמש
+// SHELTER CARD + CITY LIST
 // ═══════════════════════════════════════════
 let _citiesGeo = null;
+let _csAll = [];
+let _csSearch = '';
+let _nearestName = null;
 
 async function getCitiesGeo() {
   if (_citiesGeo) return _citiesGeo;
@@ -1926,12 +1937,50 @@ function findNearest(lat, lng, cities) {
   return nearest;
 }
 
+const CD_COLOR = {0:'#ff2244',15:'#ff5500',30:'#ff8c00',45:'#ffc200',60:'#a8e050',90:'#30d080',180:'#30d080'};
+const CD_LABEL = {0:'מיידי',15:'15 שנ׳',30:'30 שנ׳',45:'45 שנ׳',60:'דקה',90:'דקה וחצי',180:'3 דק׳'};
+
+function renderCsList() {
+  const q   = _csSearch.trim();
+  let rows  = _csAll;
+  if (q) rows = rows.filter(c => c.name.includes(q));
+  const el  = document.getElementById('cs-list');
+  if (!el) return;
+  if (!rows.length) { el.innerHTML = '<div style="color:var(--fg3);font-size:11px;font-family:var(--mono);padding:8px">לא נמצאו ישובים</div>'; return; }
+  el.innerHTML = rows.map(c => {
+    const col  = CD_COLOR[c.countdown] || '#30d080';
+    const lbl  = CD_LABEL[c.countdown] || c.countdown + ' שנ׳';
+    const isMe = c.name === _nearestName;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:6px 4px;border-bottom:1px solid var(--line);${isMe?'background:rgba(48,208,128,.06)':''}">
+      <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0${isMe?';box-shadow:0 0 5px '+col:''}"></div>
+      <div style="flex:1;font-size:13px;color:${isMe?'var(--safe)':'var(--fg)'};${isMe?'font-weight:700':''};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.name}${isMe?' 📍':''}</div>
+      <div style="font-family:var(--mono);font-size:11px;color:${col};white-space:nowrap">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+async function loadCsList() {
+  const cities = await getCitiesGeo().catch(() => null);
+  if (!cities) return;
+  _csAll = Object.entries(cities)
+    .map(([name, c]) => ({ name, countdown: c.countdown }))
+    .sort((a, b) => a.countdown - b.countdown || a.name.localeCompare(b.name, 'he'));
+  renderCsList();
+}
+
+document.getElementById('cs-search')?.addEventListener('input', e => {
+  _csSearch = e.target.value;
+  renderCsList();
+});
+
 function showShelterCard(cityName, cities) {
   const city = cities[cityName];
   if (!city) return;
   const cd    = city.countdown;
-  const color = cd === 0 ? '#ff2244' : cd <= 15 ? '#ff5500' : cd <= 30 ? '#ff8c00' : cd <= 45 ? '#ffc200' : cd <= 60 ? '#a8e050' : '#30d080';
-  const label = cd === 0 ? 'מיידי' : cd < 60 ? cd + ' שנ׳' : cd === 60 ? 'דקה' : 'דקה וחצי';
+  const color = CD_COLOR[cd] || '#30d080';
+  const label = CD_LABEL[cd] || cd + ' שנ׳';
+
+  _nearestName = cityName;
 
   document.getElementById('shelter-no-loc').style.display  = 'none';
   document.getElementById('shelter-result').style.display  = 'block';
@@ -1940,6 +1989,9 @@ function showShelterCard(cityName, cities) {
   document.getElementById('shelter-time-big').style.color  = color;
   document.getElementById('shelter-immediate').style.display = cd === 0 ? 'block' : 'none';
   document.getElementById('shelter-time-lbl').style.display  = cd === 0 ? 'none'  : 'block';
+
+  // scroll nearest to top of list
+  renderCsList();
 
   // גם מגדיר עיר בגאוג׳ אם עוד לא נבחרה
   if (!selCity) {
@@ -1950,8 +2002,10 @@ function showShelterCard(cityName, cities) {
 }
 
 function csReset() {
+  _nearestName = null;
   document.getElementById('shelter-no-loc').style.display = 'block';
   document.getElementById('shelter-result').style.display  = 'none';
+  renderCsList();
 }
 
 async function csLocate() {
@@ -2002,6 +2056,7 @@ async function detectNearestCity() {
 // ═══════════════════════════════════════════
 update();
 setInterval(update, REFRESH);
+loadCsList();
 setTimeout(detectNearestCity, 1500);
 </script>
 </body>
