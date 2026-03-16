@@ -6,891 +6,256 @@
 <title>לוח מצב ארצי — זמן בטוח</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root {
-  --bg:      #08090c;
-  --panel:   #0e1017;
-  --panel2:  #13161f;
-  --line:    rgba(255,255,255,0.07);
-  --fg:      #e8eaf0;
-  --fg2:     #7a7f94;
-  --fg3:     #3d4259;
-  --mono:    'Share Tech Mono', monospace;
-  --heebo:   'Heebo', sans-serif;
-
-  /* countdown colors */
-  --c0:   #ff2244;   /* 0s  — immediate */
-  --c15:  #ff5500;   /* 15s */
-  --c30:  #ff8c00;   /* 30s */
-  --c45:  #ffc200;   /* 45s */
-  --c60:  #a8e050;   /* 60s */
-  --c90:  #30d080;   /* 90s+ */
-
+  --bg:     #08090c;
+  --panel:  #0e1017;
+  --panel2: #13161f;
+  --line:   rgba(255,255,255,0.07);
+  --line2:  rgba(255,255,255,0.12);
+  --fg:     #e8eaf0;
+  --fg2:    #7a7f94;
+  --fg3:    #3d4259;
+  --mono:   'Share Tech Mono', monospace;
+  --heebo:  'Heebo', sans-serif;
   --danger: #ff2244;
   --warn:   #ff8c00;
   --safe:   #30d080;
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--fg); font-family: var(--heebo); }
-
-/* ── LAYOUT — DESKTOP ── */
+html, body { height: 100%; background: var(--bg); color: var(--fg); font-family: var(--heebo); }
 #app {
   display: grid;
   grid-template-rows: 48px 1fr;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 340px;
   height: 100vh;
+  overflow: hidden;
 }
-
-/* ── HEADER ── */
 header {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  display: flex; align-items: center; gap: 16px;
   padding: 0 20px;
   background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
-.logo {
-  font-family: var(--mono);
-  font-size: 13px;
-  letter-spacing: 3px;
-  color: var(--fg);
-  text-transform: uppercase;
-}
-.logo span { color: var(--safe); }
-.header-sep { width: 1px; height: 24px; background: var(--line); }
-#clock {
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--fg2);
-  letter-spacing: 1px;
-}
-.header-right { margin-right: auto; display: flex; align-items: center; gap: 12px; }
-.live-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--fg2);
-}
-.live-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--safe);
-  box-shadow: 0 0 6px var(--safe);
-  animation: blink 1.5s infinite;
-}
+.logo { font-family: var(--mono); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+.logo em { color: var(--safe); font-style: normal; }
+.sep { width: 1px; height: 22px; background: var(--line2); }
+#clock { font-family: var(--mono); font-size: 11px; color: var(--fg2); letter-spacing: 1px; }
+.hdr-right { margin-right: auto; display: flex; align-items: center; gap: 12px; }
+.live-badge { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--fg2); }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--safe); box-shadow: 0 0 6px var(--safe); animation: blink 1.5s infinite; }
 .live-dot.alert { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-.back-btn {
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--fg2);
-  text-decoration: none;
-  padding: 4px 10px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  transition: color .2s, border-color .2s;
-}
-.back-btn:hover { color: var(--fg); border-color: rgba(255,255,255,.2); }
-
-/* ── MAP AREA ── */
-#map-wrap {
-  position: relative;
-  overflow: hidden;
-  background: var(--bg);
-}
-#map {
-  width: 100%;
-  height: 100%;
-}
-/* dark tile treatment */
-.leaflet-tile-pane { filter: brightness(.55) saturate(.4) hue-rotate(200deg); }
-.leaflet-container { background: #06080f; }
-.leaflet-control-attribution { display: none; }
-.leaflet-control-zoom a {
-  background: var(--panel) !important;
-  color: var(--fg2) !important;
-  border-color: var(--line) !important;
-  font-size: 14px !important;
-}
-.leaflet-control-zoom a:hover { color: var(--fg) !important; }
-
-/* legend */
-#legend {
-  position: absolute;
-  bottom: 20px;
-  left: 16px;
-  background: rgba(8,9,12,.88);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px 14px;
-  z-index: 999;
-  backdrop-filter: blur(8px);
-}
-#legend h4 {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: var(--fg3);
-  margin-bottom: 10px;
-  text-transform: uppercase;
-}
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
-  font-size: 11px;
-  color: var(--fg2);
-}
-.legend-row:last-child { margin-bottom: 0; }
-.legend-dot {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-/* active alert overlay on map */
-#alert-overlay {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255,34,68,.15);
-  border: 1px solid var(--danger);
-  border-radius: 8px;
-  padding: 8px 20px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--danger);
-  letter-spacing: 1px;
-  z-index: 999;
-  display: none;
-  text-align: center;
-  max-width: 80%;
-  backdrop-filter: blur(6px);
-  animation: pulse-ov 1s infinite;
-}
-#alert-overlay.visible { display: block; }
-@keyframes pulse-ov { 0%,100%{opacity:1} 50%{opacity:.65} }
-
-/* ── SIDEBAR ── */
-#sidebar {
-  background: var(--panel);
-  border-right: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sidebar-section {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--line);
-}
-.sidebar-title {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 3px;
-  color: var(--fg3);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-
-/* stats grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.stat-card {
-  background: var(--panel2);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 10px 12px;
-}
-.stat-val {
-  font-family: var(--mono);
-  font-size: 22px;
-  color: var(--fg);
-  line-height: 1;
-}
-.stat-val.danger { color: var(--danger); }
-.stat-val.warn   { color: var(--warn); }
-.stat-val.safe   { color: var(--safe); }
-.stat-lbl {
-  font-size: 10px;
-  color: var(--fg3);
-  margin-top: 4px;
-  line-height: 1.3;
-}
-
-/* city search */
-.city-search-wrap {
-  position: relative;
-}
-#city-search {
-  width: 100%;
-  background: var(--panel2);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--fg);
-  outline: none;
-  direction: rtl;
-}
-#city-search::placeholder { color: var(--fg3); }
-#city-search:focus { border-color: rgba(255,255,255,.2); }
-#city-result {
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--fg2);
-  min-height: 16px;
-}
-#city-result .city-name { color: var(--fg); font-weight: 700; }
-#city-result .city-countdown { font-family: var(--mono); font-size: 14px; }
-
-/* feed */
-#feed-wrap {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 16px 12px;
-}
+.back-link { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; color: var(--fg2); text-decoration: none; border: 1px solid var(--line); border-radius: 3px; padding: 3px 9px; transition: color .15s, border-color .15s; }
+.back-link:hover { color: var(--fg); border-color: var(--line2); }
+#alert-banner { display: none; grid-column: 1 / -1; background: rgba(255,34,68,.1); border-bottom: 1px solid var(--danger); padding: 7px 20px; font-family: var(--mono); font-size: 12px; color: var(--danger); letter-spacing: .5px; animation: pulse-bg 1s infinite; }
+#alert-banner.on { display: block; }
+@keyframes pulse-bg { 0%,100%{opacity:1} 50%{opacity:.65} }
+#cities-panel { display: flex; flex-direction: column; border-left: 1px solid var(--line); overflow: hidden; background: var(--bg); }
+.panel-head { padding: 14px 16px 10px; background: var(--panel); border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.panel-label { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; color: var(--fg3); text-transform: uppercase; margin-bottom: 10px; }
+#search { width: 100%; background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; font-family: var(--mono); font-size: 12px; color: var(--fg); outline: none; direction: rtl; transition: border-color .15s; }
+#search::placeholder { color: var(--fg3); }
+#search:focus { border-color: var(--line2); }
+.filter-row { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.chip { font-family: var(--mono); font-size: 9px; letter-spacing: 1px; padding: 3px 8px; border-radius: 20px; border: 1px solid var(--line); color: var(--fg3); cursor: pointer; transition: all .15s; white-space: nowrap; }
+.chip.on { border-color: currentColor; }
+.chip-all.on  { color: var(--fg2) !important; border-color: var(--line2) !important; }
+.chip-c0.on   { color: #ff2244; }
+.chip-c15.on  { color: #ff5500; }
+.chip-c30.on  { color: #ff8c00; }
+.chip-c45.on  { color: #ffc200; }
+.chip-c60.on  { color: #a8e050; }
+.chip-c90.on  { color: #30d080; }
+#city-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+#city-list::-webkit-scrollbar { width: 3px; }
+#city-list::-webkit-scrollbar-thumb { background: var(--fg3); border-radius: 2px; }
+.city-row { display: flex; align-items: center; padding: 7px 16px; border-bottom: 1px solid var(--line); gap: 10px; transition: background .1s; }
+.city-row:hover { background: var(--panel); }
+.city-row.alert-active { background: rgba(255,34,68,.08); }
+.city-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.city-name-txt { flex: 1; font-size: 13px; color: var(--fg); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.city-time { font-family: var(--mono); font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+#list-empty { padding: 24px 16px; font-family: var(--mono); font-size: 11px; color: var(--fg3); text-align: center; letter-spacing: 1px; }
+#sidebar { display: flex; flex-direction: column; overflow: hidden; background: var(--panel); }
+.s-section { padding: 14px 16px; border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.s-label { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; color: var(--fg3); text-transform: uppercase; margin-bottom: 10px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.stat-box { background: var(--panel2); border: 1px solid var(--line); border-radius: 6px; padding: 9px 11px; }
+.stat-n { font-family: var(--mono); font-size: 20px; color: var(--fg); line-height: 1; }
+.stat-n.red { color: var(--danger); } .stat-n.ora { color: var(--warn); } .stat-n.grn { color: var(--safe); }
+.stat-l { font-size: 10px; color: var(--fg3); margin-top: 3px; line-height: 1.3; }
+#feed-wrap { flex: 1; overflow-y: auto; padding: 0 16px 12px; }
 #feed-wrap::-webkit-scrollbar { width: 3px; }
-#feed-wrap::-webkit-scrollbar-track { background: transparent; }
 #feed-wrap::-webkit-scrollbar-thumb { background: var(--fg3); border-radius: 2px; }
-
-.feed-title {
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 3px;
-  color: var(--fg3);
-  text-transform: uppercase;
-  padding: 12px 0 8px;
-  position: sticky;
-  top: 0;
-  background: var(--panel);
-}
-.feed-empty { font-size: 11px; color: var(--fg3); padding: 8px 0; }
-.feed-item {
-  padding: 9px 0;
-  border-bottom: 1px solid var(--line);
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
+.feed-hdr { font-family: var(--mono); font-size: 9px; letter-spacing: 3px; color: var(--fg3); text-transform: uppercase; padding: 12px 0 8px; position: sticky; top: 0; background: var(--panel); }
+.feed-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .feed-item:last-child { border-bottom: none; }
-.feed-time {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--fg3);
-  white-space: nowrap;
-  padding-top: 2px;
-  min-width: 36px;
-}
-.feed-body { flex: 1; min-width: 0; }
-.feed-type {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: .5px;
-}
-.feed-type.rockets { color: var(--danger); }
-.feed-type.uav     { color: var(--warn); }
-.feed-type.other   { color: var(--fg2); }
-.feed-cities {
-  font-size: 10px;
-  color: var(--fg3);
-  margin-top: 2px;
-  line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* tooltip */
-.city-tooltip {
-  background: rgba(8,9,12,.92) !important;
-  border: 1px solid rgba(255,255,255,.15) !important;
-  border-radius: 6px !important;
-  color: #e8eaf0 !important;
-  font-family: 'Share Tech Mono', monospace !important;
-  font-size: 11px !important;
-  padding: 6px 10px !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,.5) !important;
-  white-space: nowrap !important;
-}
-.city-tooltip::before { display: none !important; }
-
-/* ── MOBILE TABS ── */
-#mob-tabs {
-  display: none;
-  grid-column: 1 / -1;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  flex-direction: row;
-}
-.mob-tab {
-  flex: 1;
-  padding: 10px 0;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  color: var(--fg3);
-  text-align: center;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: color .15s, border-color .15s;
-  text-transform: uppercase;
-}
-.mob-tab.active { color: var(--safe); border-bottom-color: var(--safe); }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 700px) {
-  html, body { overflow: auto; }
-
-  #app {
-    grid-template-rows: 44px 36px 1fr;
-    grid-template-columns: 1fr;
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  header {
-    padding: 0 14px;
-    gap: 10px;
-  }
-  .header-sep { display: none; }
-  #clock { font-size: 10px; }
-  .logo { font-size: 11px; letter-spacing: 2px; }
-  .live-badge { font-size: 9px; }
-
-  #mob-tabs {
-    display: flex;
-    grid-row: 2;
-    grid-column: 1;
-  }
-
-  /* map pane */
-  #map-wrap {
-    grid-row: 3;
-    grid-column: 1;
-    display: none;
-  }
-  #map-wrap.mob-active { display: block; }
-
-  /* sidebar */
-  #sidebar {
-    grid-row: 3;
-    grid-column: 1;
-    border-right: none;
-    border-top: 1px solid var(--line);
-    display: none;
-    overflow-y: auto;
-  }
-  #sidebar.mob-active { display: flex; }
-
-  /* legend smaller on mobile */
-  #legend {
-    bottom: 12px;
-    left: 10px;
-    padding: 8px 10px;
-  }
-  #legend h4 { font-size: 8px; margin-bottom: 6px; }
-  .legend-row { font-size: 10px; margin-bottom: 5px; }
-
-  /* stats 2x2 but smaller */
-  .stats-grid { gap: 6px; }
-  .stat-val { font-size: 18px; }
-  .stat-lbl { font-size: 9px; }
-
-  /* feed scrollable */
-  #feed-wrap { flex: 1; min-height: 0; }
-
-  #alert-overlay { font-size: 11px; padding: 6px 14px; }
-}
-</style>
-  position: fixed; inset: 0;
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 9999;
-  transition: opacity .4s;
-}
-#loading-screen.fade { opacity: 0; pointer-events: none; }
-.loader-bar {
-  width: 200px;
-  height: 2px;
-  background: var(--line);
-  border-radius: 1px;
-  overflow: hidden;
-}
-.loader-fill {
-  height: 100%;
-  background: var(--safe);
-  width: 0%;
-  transition: width .3s;
-  box-shadow: 0 0 8px var(--safe);
-}
-.loader-txt {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 2px;
-  color: var(--fg3);
+.feed-t { font-family: var(--mono); font-size: 10px; color: var(--fg3); white-space: nowrap; padding-top: 2px; min-width: 34px; }
+.feed-b { flex: 1; min-width: 0; }
+.feed-type { font-family: var(--mono); font-size: 11px; }
+.feed-type.r { color: var(--danger); } .feed-type.u { color: var(--warn); } .feed-type.o { color: var(--fg2); }
+.feed-cities { font-size: 10px; color: var(--fg3); margin-top: 2px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-empty { font-family: var(--mono); font-size: 11px; color: var(--fg3); padding: 12px 0; }
+#loading { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; transition: opacity .3s; }
+#loading.fade { opacity: 0; pointer-events: none; }
+.load-bar { width: 180px; height: 2px; background: var(--line); border-radius: 1px; overflow: hidden; }
+.load-fill { height: 100%; background: var(--safe); width: 0; transition: width .25s; box-shadow: 0 0 8px var(--safe); }
+.load-txt { font-family: var(--mono); font-size: 10px; letter-spacing: 2px; color: var(--fg3); }
+#tab-bar { display: none; }
+.tab-btn { flex: 1; padding: 9px 0; font-family: var(--mono); font-size: 10px; letter-spacing: 1px; color: var(--fg3); text-align: center; cursor: pointer; border-bottom: 2px solid transparent; text-transform: uppercase; transition: color .15s, border-color .15s; }
+.tab-btn.on { color: var(--safe); border-bottom-color: var(--safe); }
+@media (max-width: 680px) {
+  html, body { overflow: hidden; }
+  #app { grid-template-rows: 44px 36px 1fr; grid-template-columns: 1fr; height: 100dvh; }
+  header { padding: 0 14px; gap: 10px; }
+  .sep, #clock { display: none; }
+  .logo { font-size: 11px; }
+  #alert-banner { grid-column: 1; font-size: 11px; padding: 6px 14px; }
+  #tab-bar { display: flex !important; grid-column: 1; background: var(--panel); border-bottom: 1px solid var(--line); }
+  #cities-panel, #sidebar { grid-column: 1; grid-row: 3; display: none; }
+  #cities-panel.tab-on, #sidebar.tab-on { display: flex; }
+  #cities-panel { border-left: none; }
+  .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .stat-n { font-size: 15px; }
+  .stat-l { font-size: 9px; }
 }
 </style>
 </head>
 <body>
-
-<div id="loading-screen">
-  <div style="font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--fg2)">LOADING SITUATION MAP_</div>
-  <div class="loader-bar"><div class="loader-fill" id="loader-fill"></div></div>
-  <div class="loader-txt" id="loader-txt">טוען נתוני ישובים...</div>
+<div id="loading">
+  <div style="font-family:var(--mono);font-size:11px;letter-spacing:3px;color:var(--fg2)">LOADING_</div>
+  <div class="load-bar"><div class="load-fill" id="load-fill"></div></div>
+  <div class="load-txt" id="load-txt">טוען נתונים...</div>
 </div>
-
 <div id="app">
   <header>
-    <div class="logo">זמן <span>בטוח</span> · לוח מצב</div>
-    <div class="header-sep"></div>
-    <div id="clock">--:--:--</div>
-    <div class="header-right">
-      <div class="live-badge">
-        <div class="live-dot" id="live-dot"></div>
-        <span id="live-status">CONNECTING</span>
-      </div>
-      <a class="back-btn" href="/">→ חזור</a>
+    <div class="logo">זמן <em>בטוח</em> · לוח מצב</div>
+    <div class="sep"></div>
+    <div id="clock"></div>
+    <div class="hdr-right">
+      <div class="live-badge"><div class="live-dot" id="live-dot"></div><span id="live-txt">CONNECTING</span></div>
+      <a class="back-link" href="/">חזור ←</a>
     </div>
   </header>
-
-  <div id="mob-tabs">
-    <div class="mob-tab active" data-target="map-wrap" onclick="switchTab(this)">🗺 מפה</div>
-    <div class="mob-tab" data-target="sidebar" onclick="switchTab(this)">📊 נתונים</div>
+  <div id="alert-banner"></div>
+  <div id="tab-bar">
+    <div class="tab-btn on" onclick="switchTab('cities-panel',this)">🏘 ישובים</div>
+    <div class="tab-btn" onclick="switchTab('sidebar',this)">📊 נתונים</div>
   </div>
-
-  <div id="map-wrap">
-    <div id="map"></div>
-    <div id="alert-overlay" id="alert-overlay"></div>
-    <div id="legend">
-      <h4>זמן מרחב מוגן</h4>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--c0)"></div> מיידי (0 שנ׳)</div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--c15)"></div> 15 שניות</div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--c30)"></div> 30 שניות</div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--c45)"></div> 45 שניות</div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--c60)"></div> דקה</div>
-      <div class="legend-row"><div class="legend-dot" style="background:var(--c90)"></div> דקה וחצי+</div>
+  <div id="cities-panel">
+    <div class="panel-head">
+      <div class="panel-label">זמן כניסה למרחב מוגן</div>
+      <input id="search" type="text" placeholder="חיפוש ישוב..." autocomplete="off">
+      <div class="filter-row">
+        <div class="chip chip-all on" onclick="setFilter('',this)">הכל</div>
+        <div class="chip chip-c0"  onclick="setFilter('0',this)">מיידי</div>
+        <div class="chip chip-c15" onclick="setFilter('15',this)">15 שנ׳</div>
+        <div class="chip chip-c30" onclick="setFilter('30',this)">30 שנ׳</div>
+        <div class="chip chip-c45" onclick="setFilter('45',this)">45 שנ׳</div>
+        <div class="chip chip-c60" onclick="setFilter('60',this)">דקה</div>
+        <div class="chip chip-c90" onclick="setFilter('90',this)">דקה½+</div>
+      </div>
     </div>
+    <div id="city-list"><div id="list-empty">טוען...</div></div>
   </div>
-
   <div id="sidebar">
-    <div class="sidebar-section">
-      <div class="sidebar-title">סטטיסטיקות חיות</div>
+    <div class="s-section">
+      <div class="s-label">סטטיסטיקות</div>
       <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-val" id="st-24h">—</div>
-          <div class="stat-lbl">התרעות<br>24 שעות</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val" id="st-1h">—</div>
-          <div class="stat-lbl">התרעות<br>שעה אחרונה</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val" id="st-rockets">—</div>
-          <div class="stat-lbl">ירי רקטות<br>24 שעות</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val" id="st-uav">—</div>
-          <div class="stat-lbl">כטב״מ<br>24 שעות</div>
-        </div>
+        <div class="stat-box"><div class="stat-n" id="st-24h">—</div><div class="stat-l">התרעות<br>24 שעות</div></div>
+        <div class="stat-box"><div class="stat-n" id="st-1h">—</div><div class="stat-l">התרעות<br>שעה אחרונה</div></div>
+        <div class="stat-box"><div class="stat-n" id="st-r">—</div><div class="stat-l">ירי רקטות<br>24 שעות</div></div>
+        <div class="stat-box"><div class="stat-n" id="st-u">—</div><div class="stat-l">כטב״מ<br>24 שעות</div></div>
       </div>
     </div>
-
-    <div class="sidebar-section">
-      <div class="sidebar-title">חיפוש ישוב</div>
-      <div class="city-search-wrap">
-        <input id="city-search" type="text" placeholder="הקלד שם ישוב..." autocomplete="off" list="city-dl">
-        <datalist id="city-dl"></datalist>
-        <div id="city-result"></div>
-      </div>
-    </div>
-
     <div id="feed-wrap">
-      <div class="feed-title">התרעות אחרונות</div>
-      <div id="feed-list"><div class="feed-empty">טוען...</div></div>
+      <div class="feed-hdr">התרעות אחרונות</div>
+      <div id="feed"></div>
     </div>
   </div>
 </div>
-
 <script>
-// ══════════════════════════════════════
-// MOBILE TABS
-// ══════════════════════════════════════
-function switchTab(el) {
-  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  const target = el.dataset.target;
-  document.getElementById('map-wrap').classList.toggle('mob-active', target === 'map-wrap');
-  document.getElementById('sidebar').classList.toggle('mob-active', target === 'sidebar');
-  // Invalidate map size when switching back to map tab
-  if (target === 'map-wrap') setTimeout(() => map.invalidateSize(), 50);
+const CD_COLOR={0:"#ff2244",15:"#ff5500",30:"#ff8c00",45:"#ffc200",60:"#a8e050",90:"#30d080",180:"#30d080"};
+const CD_LABEL={0:"מיידי",15:"15 שנ׳",30:"30 שנ׳",45:"45 שנ׳",60:"דקה",90:"דקה וחצי",180:"3 דק׳"};
+function cdColor(c){return CD_COLOR[c]||"#30d080";}
+function cdLabel(c){return CD_LABEL[c]||c+" שנ׳";}
+let allCities=[],alertCities=new Set(),filterCd="",searchQ="";
+function buildCityList(cities){
+  allCities=Object.entries(cities).map(([name,c])=>({name,countdown:c.countdown,area:c.area||0})).sort((a,b)=>a.countdown-b.countdown||a.name.localeCompare(b.name,"he"));
+  renderList();
 }
-
-// Init mobile: show map tab by default
-function initMobileTabs() {
-  if (window.innerWidth <= 700) {
-    document.getElementById('map-wrap').classList.add('mob-active');
-  }
-}
-
-// ══════════════════════════════════════
-// COUNTDOWN COLOR MAP
-// ══════════════════════════════════════
-const COUNTDOWN_COLOR = {
-  0:   '#ff2244',
-  15:  '#ff5500',
-  30:  '#ff8c00',
-  45:  '#ffc200',
-  60:  '#a8e050',
-  90:  '#30d080',
-  180: '#30d080',
-};
-
-function countdownColor(c) {
-  return COUNTDOWN_COLOR[c] || '#30d080';
-}
-
-function countdownLabel(c) {
-  if (c === 0)   return 'מיידי';
-  if (c === 15)  return '15 שניות';
-  if (c === 30)  return '30 שניות';
-  if (c === 45)  return '45 שניות';
-  if (c === 60)  return 'דקה';
-  if (c >= 90)   return 'דקה וחצי+';
-  return `${c} שניות`;
-}
-
-// ══════════════════════════════════════
-// MAP
-// ══════════════════════════════════════
-const map = L.map('map', {
-  center: [31.5, 35.0],
-  zoom: 7,
-  zoomControl: true,
-  attributionControl: false,
-});
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 14,
-  opacity: 0.8,
-}).addTo(map);
-
-// GeoJSON layer (vulnerability polygons)
-const geojsonLayer = L.layerGroup().addTo(map);
-// alert highlight layer (on top)
-const alertLayer   = L.layerGroup().addTo(map);
-
-let citiesData    = {}; // name → {lat,lng,countdown,...}
-let cityPolygons  = {}; // name → L.GeoJSON feature layer
-let geojsonData   = null;
-
-function polygonStyle(name) {
-  const city  = citiesData[name];
-  const color = city ? countdownColor(city.countdown) : '#1a1f2e';
-  const known = !!city;
-  return {
-    fillColor:   color,
-    fillOpacity: known ? 0.55 : 0.12,
-    color:       known ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.04)',
-    weight:      0.5,
-  };
-}
-
-function buildGeoJSON(geoData) {
-  geojsonLayer.clearLayers();
-  cityPolygons = {};
-
-  L.geoJSON(geoData, {
-    style: feature => polygonStyle(feature.properties.name),
-    onEachFeature: (feature, layer) => {
-      const name = feature.properties.name;
-      cityPolygons[name] = layer;
-      const city = citiesData[name];
-      const tip  = city
-        ? `<strong>${name}</strong><br>מרחב מוגן: ${countdownLabel(city.countdown)}`
-        : `<strong>${name}</strong>`;
-      layer.bindTooltip(tip, { className: 'city-tooltip', sticky: true });
-      layer.on('click', () => {
-        if (city) selectCity(name, city);
-      });
-    },
-  }).addTo(geojsonLayer);
-}
-
-function loadCities(data) {
-  citiesData = data;
-
-  // Populate search datalist
-  const dl = document.getElementById('city-dl');
-  dl.innerHTML = '';
-  Object.keys(data).sort((a,b) => a.localeCompare(b,'he')).forEach(name => {
-    const o = document.createElement('option'); o.value = name; dl.appendChild(o);
+function renderList(){
+  let rows=allCities;
+  if(filterCd!=="")rows=rows.filter(c=>String(c.countdown)===filterCd);
+  if(searchQ.trim())rows=rows.filter(c=>c.name.includes(searchQ.trim()));
+  const el=document.getElementById("city-list");
+  if(!rows.length){el.innerHTML="<div id=list-empty>לא נמצאו ישובים</div>";return;}
+  let html="";
+  rows.forEach(c=>{
+    const col=cdColor(c.countdown);
+    const isA=alertCities.has(c.name);
+    html+=`<div class="city-row${isA?" alert-active":""}"><div class="city-dot" style="background:${col}${isA?";box-shadow:0 0 6px "+col:""}"></div><div class="city-name-txt">${c.name}</div><div class="city-time" style="color:${col}">${cdLabel(c.countdown)}</div></div>`;
   });
-
-  // If GeoJSON already loaded, rebuild; otherwise fetch it
-  if (geojsonData) {
-    buildGeoJSON(geojsonData);
-  } else {
-    fetch('https://oref.live/static/israel.geojson?h=1433109d')
-      .then(r => r.json())
-      .then(geoData => {
-        geojsonData = geoData;
-        buildGeoJSON(geoData);
-      })
-      .catch(() => console.warn('GeoJSON unavailable'));
-  }
+  el.innerHTML=html;
 }
-
-// Alert highlight — flash polygons red
-let alertHighlighted = [];
-function highlightAlertCities(cities) {
-  clearAlertHighlight();
-  cities.forEach(name => {
-    const layer = cityPolygons[name];
-    if (!layer) return;
-    layer.setStyle({ fillColor: '#ff2244', fillOpacity: 0.75, color: '#ff2244', weight: 1.5 });
-    alertHighlighted.push(name);
-  });
+document.getElementById("search").addEventListener("input",e=>{searchQ=e.target.value;renderList();});
+function setFilter(cd,el){filterCd=cd;document.querySelectorAll(".chip").forEach(c=>c.classList.remove("on"));el.classList.add("on");renderList();}
+function setAlertCities(c){alertCities=new Set(c);renderList();}
+function clearAlertCities(){alertCities=new Set();renderList();}
+async function loadStats(){
+  try{
+    const data=await fetch("/api/history").then(r=>r.json());
+    if(!Array.isArray(data))return;
+    const now=Date.now()/1000,h24=data.filter(a=>a.time>=now-86400),h1=data.filter(a=>a.time>=now-3600);
+    const set=(id,val,cls)=>{const e=document.getElementById(id);e.textContent=val;e.className="stat-n "+cls;};
+    set("st-24h",h24.length,h24.length>50?"red":h24.length>10?"ora":"grn");
+    set("st-1h",h1.length,h1.length>5?"red":h1.length>0?"ora":"grn");
+    set("st-r",h24.filter(a=>a.threat===0).length,"");
+    set("st-u",h24.filter(a=>a.threat===5).length,"");
+  }catch(_){}
 }
-
-function clearAlertHighlight() {
-  alertHighlighted.forEach(name => {
-    const layer = cityPolygons[name];
-    if (layer) layer.setStyle(polygonStyle(name));
-  });
-  alertHighlighted = [];
-  alertLayer.clearLayers();
+const TL={0:"ירי רקטות",5:"כטב״מ",6:"מחבלים",1:"חומ״ס",2:"רעידה"};
+const TC={0:"r",5:"u"};
+function feedItemHTML(item){
+  const t=new Date(item.time*1000).toLocaleTimeString("he-IL",{timeZone:"Asia/Jerusalem",hour:"2-digit",minute:"2-digit"});
+  const lbl=TL[item.cat]||item.title||"התרעה",cls=TC[item.cat]||"o";
+  const cities=(item.cities||[]).slice(0,5).join(" · ")+((item.cities||[]).length>5?` +${(item.cities||[]).length-5}`:"");
+  return `<div class="feed-item"><div class="feed-t">${t}</div><div class="feed-b"><div class="feed-type ${cls}">${lbl}</div><div class="feed-cities">${cities}</div></div></div>`;
 }
-
-// ══════════════════════════════════════
-// CITY SEARCH
-// ══════════════════════════════════════
-function selectCity(name, city) {
-  const color = countdownColor(city.countdown);
-  const label = countdownLabel(city.countdown);
-  document.getElementById('city-result').innerHTML =
-    `<span class="city-name">${name}</span> — ` +
-    `<span class="city-countdown" style="color:${color}">${label}</span>`;
-  document.getElementById('city-search').value = name;
-
-  // Zoom to polygon if available, else lat/lng
-  const layer = cityPolygons[name];
-  if (layer) {
-    map.fitBounds(layer.getBounds(), { maxZoom: 12, animate: true });
-    layer.openTooltip();
-  } else if (city.lat) {
-    map.setView([city.lat, city.lng], 11, { animate: true });
-  }
+function renderFeed(items){const el=document.getElementById("feed");if(!items?.length){el.innerHTML="<div class=feed-empty>אין התרעות</div>";return;}el.innerHTML=items.slice(0,30).map(feedItemHTML).join("");}
+function prependFeed(item){const el=document.getElementById("feed");const e=el.querySelector(".feed-empty");if(e)e.remove();el.insertAdjacentHTML("afterbegin",feedItemHTML(item));const all=el.querySelectorAll(".feed-item");if(all.length>30)all[all.length-1].remove();}
+let _es=null;
+function connectSSE(){
+  if(_es)_es.close();
+  _es=new EventSource("/api/stream");
+  _es.addEventListener("snapshot",e=>{const s=JSON.parse(e.data);setLive(true);if(s.currentAlert)showBanner(s.currentAlert);if(s.feed?.length)renderFeed(s.feed);});
+  _es.addEventListener("alert_new",e=>{const a=JSON.parse(e.data);showBanner(a);setAlertCities(a.data||[]);prependFeed({id:a.id,time:Math.floor(Date.now()/1000),cities:a.data||[],cat:a.cat,title:a.title||""});});
+  _es.addEventListener("alert_clear",()=>{clearBanner();clearAlertCities();});
+  _es.addEventListener("feed_update",e=>renderFeed(JSON.parse(e.data)));
+  _es.onerror=()=>{setLive(false);setTimeout(connectSSE,3000);};
 }
-
-document.getElementById('city-search').addEventListener('input', e => {
-  const val = e.target.value.trim();
-  if (!val) { document.getElementById('city-result').innerHTML = ''; return; }
-  const city = citiesData[val];
-  if (city) selectCity(val, city);
-  else {
-    const suggestions = Object.keys(citiesData).filter(n => n.includes(val)).slice(0, 3);
-    if (suggestions.length) {
-      document.getElementById('city-result').innerHTML =
-        suggestions.map(s => `<span style="cursor:pointer;color:var(--fg2);margin-left:6px" onclick="selectCity('${s}',citiesData['${s}'])">${s}</span>`).join('');
-    } else {
-      document.getElementById('city-result').innerHTML = '<span style="color:var(--fg3)">לא נמצא</span>';
-    }
-  }
-});
-
-// ══════════════════════════════════════
-// SSE
-// ══════════════════════════════════════
-let _es = null;
-function connectSSE() {
-  if (_es) { _es.close(); _es = null; }
-  _es = new EventSource('/api/stream');
-
-  _es.addEventListener('snapshot', e => {
-    const snap = JSON.parse(e.data);
-    setLiveStatus(true);
-    if (snap.currentAlert) showAlertBanner(snap.currentAlert);
-    if (snap.feed?.length)  renderFeed(snap.feed);
-  });
-
-  _es.addEventListener('alert_new', e => {
-    const a = JSON.parse(e.data);
-    showAlertBanner(a);
-    prependFeedItem({ id: a.id, time: Math.floor(Date.now()/1000), cities: a.data||[], cat: a.cat, title: a.title||'' });
-    highlightAlertCities(a.data||[]);
-  });
-
-  _es.addEventListener('alert_clear', () => {
-    clearAlertBanner();
-    clearAlertHighlight();
-  });
-
-  _es.addEventListener('feed_update', e => {
-    renderFeed(JSON.parse(e.data));
-  });
-
-  _es.onerror = () => {
-    setLiveStatus(false);
-    setTimeout(connectSSE, 3000);
-  };
-}
-
-function setLiveStatus(ok) {
-  document.getElementById('live-dot').className = 'live-dot' + (ok ? '' : '');
-  document.getElementById('live-status').textContent = ok ? 'LIVE' : 'RECONNECTING';
-}
-
-function showAlertBanner(alert) {
-  const el     = document.getElementById('alert-overlay');
-  const cities = (alert.data||[]).slice(0, 5).join(' · ');
-  const more   = (alert.data||[]).length > 5 ? ` +${alert.data.length-5}` : '';
-  el.textContent = `🔴 ${alert.title||'אזעקה פעילה'} — ${cities}${more}`;
-  el.classList.add('visible');
-  document.getElementById('live-dot').classList.add('alert');
-  highlightAlertCities(alert.data||[]);
-}
-
-function clearAlertBanner() {
-  document.getElementById('alert-overlay').classList.remove('visible');
-  document.getElementById('live-dot').classList.remove('alert');
-}
-
-// ══════════════════════════════════════
-// FEED
-// ══════════════════════════════════════
-const THREAT_LABEL = { 0:'ירי רקטות', 5:'כטב״מ', 6:'מחבלים', 1:'חומ״ס', 2:'רעידה' };
-const THREAT_CLS   = { 0:'rockets', 5:'uav', 6:'other', 1:'other', 2:'other' };
-
-function feedItemHTML(item) {
-  const t   = new Date(item.time * 1000).toLocaleTimeString('he-IL',
-    { timeZone:'Asia/Jerusalem', hour:'2-digit', minute:'2-digit' });
-  const lbl = THREAT_LABEL[item.cat] || item.title || 'התרעה';
-  const cls = THREAT_CLS[item.cat]   || 'other';
-  const cities = (item.cities||[]).slice(0, 4).join(' · ') + ((item.cities||[]).length > 4 ? ` +${item.cities.length-4}` : '');
-  return `<div class="feed-item">
-    <div class="feed-time">${t}</div>
-    <div class="feed-body">
-      <div class="feed-type ${cls}">${lbl}</div>
-      <div class="feed-cities">${cities}</div>
-    </div>
-  </div>`;
-}
-
-function renderFeed(items) {
-  const el = document.getElementById('feed-list');
-  if (!items?.length) { el.innerHTML = '<div class="feed-empty">אין התרעות אחרונות</div>'; return; }
-  el.innerHTML = items.slice(0, 30).map(feedItemHTML).join('');
-}
-
-function prependFeedItem(item) {
-  const el  = document.getElementById('feed-list');
-  const old = el.querySelector('.feed-empty');
-  if (old) old.remove();
-  el.insertAdjacentHTML('afterbegin', feedItemHTML(item));
-  const items = el.querySelectorAll('.feed-item');
-  if (items.length > 30) items[items.length-1].remove();
-}
-
-// ══════════════════════════════════════
-// STATS
-// ══════════════════════════════════════
-async function loadStats() {
-  try {
-    const r    = await fetch('/api/history');
-    const data = await r.json();
-    if (!Array.isArray(data)) return;
-    const now = Date.now()/1000;
-    const h24 = data.filter(a => a.time >= now - 86400);
-    const h1  = data.filter(a => a.time >= now - 3600);
-    document.getElementById('st-24h').textContent    = h24.length;
-    document.getElementById('st-1h').textContent     = h1.length;
-    document.getElementById('st-rockets').textContent = h24.filter(a => a.threat === 0).length;
-    document.getElementById('st-uav').textContent    = h24.filter(a => a.threat === 5).length;
-
-    // Color code
-    const colorEl = document.getElementById('st-24h');
-    colorEl.className = 'stat-val ' + (h24.length > 50 ? 'danger' : h24.length > 10 ? 'warn' : 'safe');
-    const colorEl2 = document.getElementById('st-1h');
-    colorEl2.className = 'stat-val ' + (h1.length > 5 ? 'danger' : h1.length > 0 ? 'warn' : 'safe');
-  } catch(_) {}
-}
-
-// ══════════════════════════════════════
-// CLOCK
-// ══════════════════════════════════════
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock').textContent =
-    now.toLocaleTimeString('he-IL', { timeZone:'Asia/Jerusalem', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ══════════════════════════════════════
-// BOOT
-// ══════════════════════════════════════
-async function boot() {
-  const fill = document.getElementById('loader-fill');
-  const txt  = document.getElementById('loader-txt');
-
-  fill.style.width = '15%';
-  txt.textContent = 'טוען נתוני ישובים ומפה...';
-
-  // Load cities + GeoJSON in parallel
-  const [citiesResp, geoResp] = await Promise.all([
-    fetch('/api/cities').then(r => r.json()),
-    fetch('https://oref.live/static/israel.geojson?h=1433109d').then(r => r.json()).catch(() => null),
-  ]);
-
-  fill.style.width = '55%';
-  txt.textContent = 'בונה מפת פגיעות...';
-
-  citiesData  = citiesResp;
-  if (geoResp) { geojsonData = geoResp; }
-
-  loadCities(citiesResp);
-  initMobileTabs();
-
-  fill.style.width = '75%';
-  txt.textContent = 'מחבר לזרם נתונים...';
-
+function setLive(ok){document.getElementById("live-dot").className="live-dot";document.getElementById("live-txt").textContent=ok?"LIVE":"RECONNECTING";}
+function showBanner(alert){const cities=(alert.data||[]).slice(0,6).join(" · ");const more=(alert.data||[]).length>6?` ועוד ${(alert.data||[]).length-6}`:"";document.getElementById("alert-banner").textContent=`🔴 ${alert.title||"אזעקה פעילה"} — ${cities}${more}`;document.getElementById("alert-banner").classList.add("on");document.getElementById("live-dot").classList.add("alert");setAlertCities(alert.data||[]);}
+function clearBanner(){document.getElementById("alert-banner").classList.remove("on");document.getElementById("live-dot").classList.remove("alert");}
+function switchTab(id,btn){document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("on"));btn.classList.add("on");document.getElementById("cities-panel").classList.toggle("tab-on",id==="cities-panel");document.getElementById("sidebar").classList.toggle("tab-on",id==="sidebar");}
+function initTabs(){if(window.innerWidth<=680){document.getElementById("cities-panel").classList.add("tab-on");}}
+setInterval(()=>{document.getElementById("clock").textContent=new Date().toLocaleTimeString("he-IL",{timeZone:"Asia/Jerusalem",hour:"2-digit",minute:"2-digit",second:"2-digit"});},1000);
+async function boot(){
+  const fill=document.getElementById("load-fill"),txt=document.getElementById("load-txt");
+  fill.style.width="20%";txt.textContent="טוען נתוני ישובים...";
+  const cities=await fetch("/api/cities").then(r=>r.json());
+  fill.style.width="60%";txt.textContent="בונה רשימה...";
+  buildCityList(cities);initTabs();
+  fill.style.width="75%";txt.textContent="מתחבר...";
   connectSSE();
-
-  fill.style.width = '88%';
-  txt.textContent = 'טוען סטטיסטיקות...';
-
-  await loadStats();
-  setInterval(loadStats, 30000);
-
-  fill.style.width = '100%';
-  await new Promise(r => setTimeout(r, 300));
-
-  const ls = document.getElementById('loading-screen');
-  ls.classList.add('fade');
-  setTimeout(() => ls.remove(), 400);
+  fill.style.width="90%";txt.textContent="סטטיסטיקות...";
+  await loadStats();setInterval(loadStats,30000);
+  fill.style.width="100%";
+  await new Promise(r=>setTimeout(r,250));
+  const ls=document.getElementById("loading");ls.classList.add("fade");setTimeout(()=>ls.remove(),350);
 }
-
 boot();
 </script>
 </body>
