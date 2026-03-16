@@ -1035,7 +1035,7 @@ footer {
         <span class="city-icon" id="city-status"></span>
         <datalist id="city-dl"></datalist>
       </div>
-      <button onclick="gaugeLocate()" title="זהה מיקום" id="gauge-loc-btn" style="background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:7px 11px;color:var(--fg2);font-size:13px;cursor:pointer;transition:all .15s;flex-shrink:0" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg2)'">📍</button>
+      <button onclick="csLocate()" title="זהה מיקום" id="gauge-loc-btn" style="background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:7px 11px;color:var(--fg2);font-size:13px;cursor:pointer;transition:all .15s;flex-shrink:0" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg2)'">📍</button>
       <button class="city-clear-btn" id="city-clear" onclick="clearCity()" style="display:none">נקה</button>
     </div>
     <div class="city-msg" id="city-msg"></div>
@@ -1718,18 +1718,10 @@ document.getElementById('city-input').addEventListener('input', e => {
   } else if (known.includes(v)) {
     selCity = v;
     statusEl.textContent = '✅';
-    const now = Date.now() / 1000;
-    const cityAlerts = (historicalLoaded ? allHistorical : allAlerts).filter(a => (a.cities||[]).includes(v));
-    const count48 = cityAlerts.filter(a => a.time >= now - 172800).length;
-    const count24 = cityAlerts.filter(a => a.time >= now - 86400).length;
-    const times = cityAlerts.map(a => a.time).sort((a,b) => b-a);
-    const sinceStr = times.length ? fmtSec(now - times[0]) + ' מאז האחרונה' : 'לא נרשמו התרעות';
-    const alertWord = count48 === 1 ? 'התרעה' : 'התרעות';
-    msgEl.innerHTML =
-      `✓ <strong>${v}</strong> — ${count48} ${alertWord} ב-48 שעות האחרונות` +
-      (count24 > 0 ? ` · ${count24} ב-24 שעות האחרונות` : '') +
-      ` · ${sinceStr}`;
-    msgEl.className = 'city-msg ok';
+    msgEl.textContent = ''; msgEl.className = 'city-msg';
+    // update shelter card with searched city
+    if (_citiesGeo) showShelterCard(v, _citiesGeo);
+    else getCitiesGeo().then(cities => showShelterCard(v, cities)).catch(()=>{});
   } else {
     selCity = '';
     statusEl.textContent = '❓';
@@ -2001,16 +1993,22 @@ function csReset() {
 
 async function csLocate() {
   if (!navigator.geolocation) return;
-  const btns = [document.getElementById('cs-loc-btn'), document.getElementById('st-loc-btn')];
+  const btns = [document.getElementById('gauge-loc-btn'), document.getElementById('st-loc-btn')];
   btns.forEach(b => { if (b) b.textContent = '⏳'; });
   navigator.geolocation.getCurrentPosition(async pos => {
-    btns.forEach(b => { if (b) b.textContent = b.id === 'cs-loc-btn' ? '📍 עדכן מיקום' : '📍 עדכן'; });
+    btns.forEach(b => { if (b) b.textContent = b.id === 'st-loc-btn' ? '📍 עדכן' : '📍'; });
     const cities = await getCitiesGeo().catch(() => null);
     if (!cities) return;
     const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
-    if (nearest) showShelterCard(nearest, cities);
+    if (!nearest) return;
+    // update gauge
+    const inp = document.getElementById('city-input');
+    inp.value = nearest;
+    inp.dispatchEvent(new Event('input'));
+    // update shelter card
+    showShelterCard(nearest, cities);
   }, () => {
-    btns.forEach(b => { if (b) b.textContent = b.id === 'cs-loc-btn' ? '📍 עדכן מיקום' : '📍 עדכן'; });
+    btns.forEach(b => { if (b) b.textContent = b.id === 'st-loc-btn' ? '📍 עדכן' : '📍'; });
   }, { timeout: 8000, maximumAge: 60000 });
 }
 
