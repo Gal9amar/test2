@@ -56,8 +56,6 @@
   gtag('config', 'G-8WN0T5QR1Y');
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Heebo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 /* ══════════════════════════════════════════════
    VARIABLES
@@ -862,57 +860,8 @@ footer {
 }
 
 /* ══════════════════════════════════════════════
-   LIVE MAP SECTION
+   ALERT FEED
 ══════════════════════════════════════════════ */
-.live-section {
-  margin: 28px 0;
-}
-.live-section-title {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--fg2);
-  text-transform: uppercase;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.live-dot-small {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--safe);
-  box-shadow: 0 0 6px var(--safe);
-  animation: pulse-live 1.5s infinite;
-}
-.live-dot-small.alert-active {
-  background: var(--danger);
-  box-shadow: 0 0 8px var(--danger);
-}
-@keyframes pulse-live {
-  0%,100% { opacity:1; }
-  50%      { opacity:.4; }
-}
-#map-container {
-  width: 100%;
-  height: 340px;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--line2);
-  background: var(--panel);
-  position: relative;
-}
-/* Override leaflet dark tiles */
-.leaflet-tile-pane { filter: brightness(0.7) saturate(0.5); }
-.leaflet-container { background: #0d1117; }
-.leaflet-control-attribution { display: none; }
-.leaflet-control-zoom a {
-  background: var(--panel) !important;
-  color: var(--fg) !important;
-  border-color: var(--line2) !important;
-}
-
-/* Alert Feed */
 .feed-section { margin: 28px 0; }
 .feed-title {
   font-family: var(--mono);
@@ -1003,15 +952,6 @@ footer {
 
 <!-- ── ACTIVE ALERT BANNER ── -->
 <div id="alert-banner">🔴 <span id="alert-banner-text">אזעקה פעילה</span></div>
-
-<!-- ── LIVE MAP ── -->
-<div class="live-section">
-  <div class="live-section-title">
-    <span class="live-dot-small" id="live-dot"></span>
-    מפת אזעקות חיה
-  </div>
-  <div id="map-container"></div>
-</div>
 
 <!-- ── ALERT FEED ── -->
 <div class="feed-section">
@@ -1267,12 +1207,6 @@ function connectSSE() {
   _es.addEventListener('snapshot', e => {
     const snap = JSON.parse(e.data);
     _sseConnected = true;
-    document.getElementById('live-dot').classList.remove('alert-active');
-
-    if (snap.currentAlert) {
-      showActiveBanner(snap.currentAlert);
-      highlightMapAlert(snap.currentAlert.data || []);
-    }
     if (snap.feed && snap.feed.length) {
       renderFeed(snap.feed);
     }
@@ -1281,8 +1215,6 @@ function connectSSE() {
   _es.addEventListener('alert_new', e => {
     const alert = JSON.parse(e.data);
     showActiveBanner(alert);
-    highlightMapAlert(alert.data || []);
-    // Add to feed immediately
     prependFeedItem({
       id:     alert.id,
       time:   Math.floor(Date.now() / 1000),
@@ -1294,7 +1226,6 @@ function connectSSE() {
 
   _es.addEventListener('alert_clear', () => {
     clearActiveBanner();
-    clearMapHighlight();
   });
 
   _es.addEventListener('feed_update', e => {
@@ -1325,100 +1256,6 @@ function clearActiveBanner() {
   document.getElementById('alert-banner').classList.remove('visible');
   document.getElementById('live-dot').classList.remove('alert-active');
 }
-
-// ═══════════════════════════════════════════
-// Leaflet map
-// ═══════════════════════════════════════════
-const CAT_COLOR = {
-  1: '#ff3d57', // rockets
-  6: '#ff8c00', // uav
-  10: '#9b30ff', // terror
-  13: '#9b30ff',
-};
-
-let map = null;
-let alertLayer = null; // GeoJSON layer for alert highlights
-let geojsonData = null;
-let cityPolygons = {}; // name → layer
-
-function initMap() {
-  map = L.map('map-container', {
-    center: [31.5, 34.8],
-    zoom: 7,
-    zoomControl: true,
-    attributionControl: false,
-  });
-
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 13,
-    opacity: 0.6,
-  }).addTo(map);
-
-  alertLayer = L.layerGroup().addTo(map);
-
-  // Load Israel GeoJSON from oref.live (same source they use, publicly accessible)
-  fetch('https://oref.live/static/israel.geojson?h=1433109d')
-    .then(r => r.json())
-    .then(data => {
-      geojsonData = data;
-      L.geoJSON(data, {
-        style: featureStyle,
-        onEachFeature: (feature, layer) => {
-          const name = feature.properties?.name || '';
-          if (name) cityPolygons[name] = layer;
-          layer.bindTooltip(name, { permanent: false, className: 'map-tooltip' });
-        },
-      }).addTo(map);
-    })
-    .catch(() => {
-      // GeoJSON not available — map still works as a base
-    });
-}
-
-function featureStyle() {
-  return {
-    fillColor: '#1a1a2e',
-    fillOpacity: 0.85,
-    color: '#333',
-    weight: 0.8,
-  };
-}
-
-function alertStyleForCat(cat) {
-  const color = CAT_COLOR[cat] || '#ff3d57';
-  return {
-    fillColor: color,
-    fillOpacity: 0.6,
-    color: color,
-    weight: 1.5,
-  };
-}
-
-let _highlightedLayers = [];
-
-function highlightMapAlert(cities) {
-  clearMapHighlight();
-  if (!geojsonData) return;
-  cities.forEach(cityName => {
-    const layer = cityPolygons[cityName];
-    if (layer) {
-      layer.setStyle(alertStyleForCat(1));
-      _highlightedLayers.push(layer);
-    }
-  });
-}
-
-function clearMapHighlight() {
-  _highlightedLayers.forEach(layer => {
-    layer.setStyle(featureStyle());
-  });
-  _highlightedLayers = [];
-}
-
-// Init map after DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-  initMap();
-});
 
 // ═══════════════════════════════════════════
 // Alert feed rendering
