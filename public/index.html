@@ -1017,28 +1017,28 @@ footer {
 <!-- ── ACTIVE ALERT BANNER ── -->
 <div id="alert-banner">🔴 <span id="alert-banner-text">אזעקה פעילה</span></div>
 
-<!-- ── SHELTER INDICATOR — top of page ── -->
-<div id="shelter-top" style="display:none;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-  <div style="display:flex;align-items:center;gap:8px">
-    <span style="font-size:14px">📍</span>
-    <span id="st-city-name" style="font-size:13px;color:var(--fg)"></span>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px">
-    <span id="st-time-val" style="font-family:var(--mono);font-size:22px;font-weight:700;line-height:1"></span>
-    <span id="st-time-lbl" style="font-size:11px;color:var(--fg2)">זמן למרחב מוגן</span>
-  </div>
-  <div style="margin-right:auto;display:flex;gap:8px">
-    <button onclick="csLocate()" id="st-loc-btn" style="background:none;border:1px solid var(--line);border-radius:5px;padding:4px 10px;color:var(--fg3);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg3)'">📍 עדכן</button>
-    <button onclick="csReset()" style="background:none;border:none;color:var(--fg3);font-family:var(--mono);font-size:10px;cursor:pointer;padding:4px 6px;transition:color .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--fg3)'">✕</button>
-  </div>
-</div>
-<div id="shelter-top-empty" style="background:var(--panel);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;align-items:center;gap:12px">
-  <span style="font-size:13px;color:var(--fg2)">📍 זמן מרחב מוגן לפי מיקומך</span>
-  <button onclick="csLocate()" style="background:none;border:1px solid var(--line);border-radius:5px;padding:4px 12px;color:var(--fg2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg2)'">זהה מיקום</button>
-</div>
-
 <!-- ── APP ── -->
 <div id="app" style="display:none">
+
+  <!-- SHELTER INDICATOR — above duration picker -->
+  <div id="shelter-top" style="display:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:16px;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:14px">📍</span>
+      <span id="st-city-name" style="font-size:13px;color:var(--fg)"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="st-time-val" style="font-family:var(--mono);font-size:22px;font-weight:700;line-height:1"></span>
+      <span id="st-time-lbl" style="font-size:11px;color:var(--fg2)">זמן למרחב מוגן</span>
+    </div>
+    <div style="margin-right:auto;display:flex;gap:8px">
+      <button onclick="csLocate()" id="st-loc-btn" style="background:none;border:1px solid var(--line);border-radius:5px;padding:4px 10px;color:var(--fg3);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg3)'">📍 עדכן</button>
+      <button onclick="csReset()" style="background:none;border:none;color:var(--fg3);font-family:var(--mono);font-size:10px;cursor:pointer;padding:4px 6px;transition:color .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--fg3)'">✕</button>
+    </div>
+  </div>
+  <div id="shelter-top-empty" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:13px;color:var(--fg2)">📍 זמן מרחב מוגן לפי מיקומך</span>
+    <button onclick="csLocate()" style="background:none;border:1px solid var(--line);border-radius:5px;padding:4px 12px;color:var(--fg2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg2)'">זהה מיקום</button>
+  </div>
 
   <!-- DURATION PICKER — above gauge -->
   <div class="duration-intro">
@@ -1249,49 +1249,11 @@ footer {
   </div>
 
 
-  <!-- SHELTER CARD + FEED — side by side -->
-  <div class="two-col" style="margin-top:8px">
-    <div>
-      <div class="divider"><div class="divider-line"></div><div class="divider-txt">זמן מרחב מוגן</div><div class="divider-line"></div></div>
-      <div class="panel-box" id="shelter-card">
-        <!-- default: no location -->
-        <div id="shelter-no-loc" style="text-align:center;padding:16px 8px">
-          <div style="font-size:28px;margin-bottom:10px">📍</div>
-          <div style="font-size:13px;color:var(--fg2);margin-bottom:14px">לחץ לזיהוי המיקום שלך</div>
-          <button onclick="csLocate()" style="background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:9px 20px;color:var(--fg);font-family:var(--mono);font-size:12px;letter-spacing:1px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='rgba(255,255,255,.3)'" onmouseout="this.style.borderColor='var(--line2)'">זהה מיקום</button>
-        </div>
-        <!-- filled after location -->
-        <div id="shelter-result" style="display:none;padding:4px 0">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-            <div style="font-size:13px;color:var(--fg2);font-family:var(--mono)">📍 <span id="shelter-city-name" style="color:var(--fg)"></span></div>
-            <button onclick="csReset()" style="background:none;border:none;color:var(--fg3);font-size:11px;font-family:var(--mono);cursor:pointer;padding:2px 6px;border-radius:4px;transition:color .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--fg3)'">✕ אפס</button>
-          </div>
-          <div style="text-align:center;padding:12px 0 16px">
-            <div id="shelter-time-big" style="font-family:var(--mono);font-size:52px;line-height:1;font-weight:700"></div>
-            <div id="shelter-time-lbl" style="font-size:13px;color:var(--fg2);margin-top:8px">זמן להגיע למרחב מוגן</div>
-          </div>
-          <div id="shelter-immediate" style="display:none;background:rgba(255,34,68,.1);border:1px solid var(--danger);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--danger);text-align:center;letter-spacing:.5px">
-            ⚠️ כניסה מיידית למרחב מוגן
-          </div>
-          <div style="margin-top:16px;text-align:center">
-            <button onclick="csLocate()" id="cs-loc-btn" style="background:none;border:1px solid var(--line);border-radius:6px;padding:6px 14px;color:var(--fg3);font-family:var(--mono);font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)';this.style.borderColor='var(--line2)'" onmouseout="this.style.color='var(--fg3)';this.style.borderColor='var(--line)'">📍 עדכן מיקום</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- רשימת ישובים + חיפוש -->
-      <div style="margin-top:14px">
-        <input id="cs-search" type="text" placeholder="חיפוש ישוב..." autocomplete="off"
-          style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--fg);outline:none;direction:rtl;margin-bottom:8px;transition:border-color .15s"
-          onfocus="this.style.borderColor='var(--line2)'" onblur="this.style.borderColor='var(--line)'">
-        <div id="cs-list" style="max-height:320px;overflow-y:auto"></div>
-      </div>
-    </div>
-    <div>
-      <div class="divider"><div class="divider-line"></div><div class="divider-txt">התרעות אחרונות</div><div class="divider-line"></div></div>
-      <div class="panel-box" id="alert-feed">
-        <div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px;text-align:center">מחכה לנתונים...</div>
-      </div>
+  <!-- FEED -->
+  <div style="margin-top:8px">
+    <div class="divider"><div class="divider-line"></div><div class="divider-txt">התרעות אחרונות</div><div class="divider-line"></div></div>
+    <div class="panel-box" id="alert-feed">
+      <div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px;text-align:center">מחכה לנתונים...</div>
     </div>
   </div>
 
