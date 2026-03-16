@@ -1656,6 +1656,7 @@ async function update() {
     if (appEl.style.display === 'none') {
       appEl.style.display = 'block';
       initGauge();
+      detectNearestCity();
     }
   } catch(e) {
     console.error('update failed:', e);
@@ -2041,7 +2042,6 @@ async function detectNearestCity() {
 update();
 setInterval(update, REFRESH);
 loadCsList();
-setTimeout(detectNearestCity, 1500);
 </script>
 </body>
 </html>
