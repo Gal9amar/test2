@@ -1017,6 +1017,26 @@ footer {
 <!-- ── ACTIVE ALERT BANNER ── -->
 <div id="alert-banner">🔴 <span id="alert-banner-text">אזעקה פעילה</span></div>
 
+<!-- ── SHELTER INDICATOR — top of page ── -->
+<div id="shelter-top" style="display:none;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:8px">
+    <span style="font-size:14px">📍</span>
+    <span id="st-city-name" style="font-size:13px;color:var(--fg)"></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px">
+    <span id="st-time-val" style="font-family:var(--mono);font-size:22px;font-weight:700;line-height:1"></span>
+    <span id="st-time-lbl" style="font-size:11px;color:var(--fg2)">זמן למרחב מוגן</span>
+  </div>
+  <div style="margin-right:auto;display:flex;gap:8px">
+    <button onclick="csLocate()" id="st-loc-btn" style="background:none;border:1px solid var(--line);border-radius:5px;padding:4px 10px;color:var(--fg3);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg3)'">📍 עדכן</button>
+    <button onclick="csReset()" style="background:none;border:none;color:var(--fg3);font-family:var(--mono);font-size:10px;cursor:pointer;padding:4px 6px;transition:color .15s" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--fg3)'">✕</button>
+  </div>
+</div>
+<div id="shelter-top-empty" style="background:var(--panel);border-bottom:1px solid var(--line);padding:10px 20px;display:flex;align-items:center;gap:12px">
+  <span style="font-size:13px;color:var(--fg2)">📍 זמן מרחב מוגן לפי מיקומך</span>
+  <button onclick="csLocate()" style="background:none;border:1px solid var(--line);border-radius:5px;padding:4px 12px;color:var(--fg2);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--fg)'" onmouseout="this.style.color='var(--fg2)'">זהה מיקום</button>
+</div>
+
 <!-- ── APP ── -->
 <div id="app" style="display:none">
 
@@ -1982,6 +2002,15 @@ function showShelterCard(cityName, cities) {
 
   _nearestName = cityName;
 
+  // ── top indicator ──
+  document.getElementById('shelter-top-empty').style.display = 'none';
+  document.getElementById('shelter-top').style.display       = 'flex';
+  document.getElementById('st-city-name').textContent        = cityName;
+  document.getElementById('st-time-val').textContent         = cd === 0 ? '⚠️' : label;
+  document.getElementById('st-time-val').style.color         = color;
+  document.getElementById('st-time-lbl').style.display       = cd === 0 ? 'none' : 'inline';
+
+  // ── card in page ──
   document.getElementById('shelter-no-loc').style.display  = 'none';
   document.getElementById('shelter-result').style.display  = 'block';
   document.getElementById('shelter-city-name').textContent = cityName;
@@ -1990,10 +2019,8 @@ function showShelterCard(cityName, cities) {
   document.getElementById('shelter-immediate').style.display = cd === 0 ? 'block' : 'none';
   document.getElementById('shelter-time-lbl').style.display  = cd === 0 ? 'none'  : 'block';
 
-  // scroll nearest to top of list
   renderCsList();
 
-  // גם מגדיר עיר בגאוג׳ אם עוד לא נבחרה
   if (!selCity) {
     const inp = document.getElementById('city-input');
     inp.value = cityName;
@@ -2003,23 +2030,25 @@ function showShelterCard(cityName, cities) {
 
 function csReset() {
   _nearestName = null;
-  document.getElementById('shelter-no-loc').style.display = 'block';
-  document.getElementById('shelter-result').style.display  = 'none';
+  document.getElementById('shelter-top').style.display       = 'none';
+  document.getElementById('shelter-top-empty').style.display = 'flex';
+  document.getElementById('shelter-no-loc').style.display    = 'block';
+  document.getElementById('shelter-result').style.display    = 'none';
   renderCsList();
 }
 
 async function csLocate() {
   if (!navigator.geolocation) return;
-  const btn = document.getElementById('cs-loc-btn');
-  if (btn) btn.textContent = '⏳ מזהה...';
+  const btns = [document.getElementById('cs-loc-btn'), document.getElementById('st-loc-btn')];
+  btns.forEach(b => { if (b) b.textContent = '⏳'; });
   navigator.geolocation.getCurrentPosition(async pos => {
-    if (btn) btn.textContent = '📍 עדכן מיקום';
+    btns.forEach(b => { if (b) b.textContent = b.id === 'cs-loc-btn' ? '📍 עדכן מיקום' : '📍 עדכן'; });
     const cities = await getCitiesGeo().catch(() => null);
     if (!cities) return;
     const nearest = findNearest(pos.coords.latitude, pos.coords.longitude, cities);
     if (nearest) showShelterCard(nearest, cities);
   }, () => {
-    if (btn) btn.textContent = '📍 עדכן מיקום';
+    btns.forEach(b => { if (b) b.textContent = b.id === 'cs-loc-btn' ? '📍 עדכן מיקום' : '📍 עדכן'; });
   }, { timeout: 8000, maximumAge: 60000 });
 }
 
