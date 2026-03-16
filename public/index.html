@@ -1241,12 +1241,13 @@ connectSSE();
 // Active alert banner
 // ═══════════════════════════════════════════
 function showActiveBanner(alert) {
-  const banner = document.getElementById('alert-banner');
-  const text   = document.getElementById('alert-banner-text');
-  const cities = (alert.data || []).slice(0, 5).join(' · ');
-  text.textContent = (alert.title || 'אזעקה פעילה') + (cities ? ` — ${cities}` : '');
+  const banner    = document.getElementById('alert-banner');
+  const text      = document.getElementById('alert-banner-text');
+  const allCities = alert.data || [];
+  const shown     = allCities.slice(0, 4).join(' · ');
+  const more      = allCities.length > 4 ? ` ועוד ${allCities.length - 4}` : '';
+  text.textContent = (alert.title || 'אזעקה פעילה') + (shown ? ` — ${shown}${more}` : '');
   banner.classList.add('visible');
-  document.getElementById('live-dot').classList.add('alert-active');
 }
 
 function clearActiveBanner() {
