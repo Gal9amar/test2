@@ -860,6 +860,69 @@ footer {
 }
 
 /* ══════════════════════════════════════════════
+   TWO-COLUMN LAYOUT
+══════════════════════════════════════════════ */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media(max-width:600px) {
+  .two-col { grid-template-columns: 1fr; }
+}
+
+/* cities list in feed column */
+.city-shelter-list { display: flex; flex-direction: column; gap: 0; }
+.city-shelter-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px; border-radius: 6px;
+  transition: background .1s;
+}
+.city-shelter-row:hover { background: var(--panel2); }
+.city-shelter-row.alert-active { background: rgba(255,61,87,.08); }
+.cs-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cs-name { flex: 1; font-size: 13px; color: var(--fg); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs-time { font-family: var(--mono); font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+
+.city-search-box {
+  width: 100%;
+  background: var(--panel2);
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--fg);
+  outline: none;
+  direction: rtl;
+  margin-bottom: 8px;
+  transition: border-color .15s;
+}
+.city-search-box::placeholder { color: var(--fg3); }
+.city-search-box:focus { border-color: rgba(255,255,255,.25); }
+
+.cs-filter-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.cs-chip {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 1px;
+  padding: 3px 8px; border-radius: 20px;
+  border: 1px solid var(--line); color: var(--fg3);
+  cursor: pointer; transition: all .15s;
+}
+.cs-chip.on { border-color: currentColor; }
+.cs-chip[data-cd=""].on   { color: var(--fg2) !important; border-color: rgba(255,255,255,.2) !important; }
+.cs-chip[data-cd="0"].on  { color: #ff2244; }
+.cs-chip[data-cd="15"].on { color: #ff5500; }
+.cs-chip[data-cd="30"].on { color: #ff8c00; }
+.cs-chip[data-cd="45"].on { color: #ffc200; }
+.cs-chip[data-cd="60"].on { color: #a8e050; }
+.cs-chip[data-cd="90"].on { color: #30d080; }
+
+#cs-list-wrap { max-height: 400px; overflow-y: auto; }
+#cs-list-wrap::-webkit-scrollbar { width: 3px; }
+#cs-list-wrap::-webkit-scrollbar-thumb { background: var(--fg3); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════
    ALERT FEED
 ══════════════════════════════════════════════ */
 .feed-section { margin: 28px 0; }
@@ -1150,24 +1213,48 @@ footer {
     </div>
   </div>
 
-  <!-- HOT HOURS -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">שעות חמות</div><div class="divider-line"></div></div>
-  <div class="panel-box">
-    <div class="hh-chart" id="hh-chart"></div>
+  <!-- HOT HOURS + TOP CITIES — side by side -->
+  <div class="two-col">
+    <div>
+      <div class="divider"><div class="divider-line"></div><div class="divider-txt">שעות חמות</div><div class="divider-line"></div></div>
+      <div class="panel-box">
+        <div class="hh-chart" id="hh-chart"></div>
+      </div>
+    </div>
+    <div>
+      <div class="divider"><div class="divider-line"></div><div class="divider-txt">5 ערים המובילות</div><div class="divider-line"></div></div>
+      <div class="panel-box" id="top-cities"></div>
+    </div>
   </div>
 
-  <!-- TOP 5 CITIES -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">5 ערים המובילות בכמות האזעקות</div><div class="divider-line"></div></div>
-  <div class="panel-box" id="top-cities"></div>
+  <!-- FEED + CITIES SHELTER — side by side -->
+  <div class="two-col" style="margin-top:8px">
+    <div>
+      <div class="divider"><div class="divider-line"></div><div class="divider-txt">התרעות אחרונות</div><div class="divider-line"></div></div>
+      <div class="panel-box" id="alert-feed">
+        <div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px;text-align:center">מחכה לנתונים...</div>
+      </div>
+    </div>
+    <div>
+      <div class="divider"><div class="divider-line"></div><div class="divider-txt">זמן מרחב מוגן לפי ישוב</div><div class="divider-line"></div></div>
+      <input class="city-search-box" id="cs-search" type="text" placeholder="חיפוש ישוב..." autocomplete="off">
+      <div class="cs-filter-row">
+        <div class="cs-chip on" data-cd="" onclick="csFilter('',this)">הכל</div>
+        <div class="cs-chip" data-cd="0"  onclick="csFilter('0',this)">מיידי</div>
+        <div class="cs-chip" data-cd="15" onclick="csFilter('15',this)">15 שנ׳</div>
+        <div class="cs-chip" data-cd="30" onclick="csFilter('30',this)">30 שנ׳</div>
+        <div class="cs-chip" data-cd="45" onclick="csFilter('45',this)">45 שנ׳</div>
+        <div class="cs-chip" data-cd="60" onclick="csFilter('60',this)">דקה</div>
+        <div class="cs-chip" data-cd="90" onclick="csFilter('90',this)">דקה½+</div>
+      </div>
+      <div id="cs-list-wrap">
+        <div class="city-shelter-list" id="cs-list"><div style="color:var(--fg3);font-size:11px;font-family:var(--mono);padding:8px">טוען...</div></div>
+      </div>
+    </div>
+  </div>
 
   <!-- SHARE -->
-  <button class="share-btn" id="share-btn" onclick="shareLink()">🔗 שתף את האתר</button>
-
-  <!-- RECENT ALERTS FEED -->
-  <div class="divider"><div class="divider-line"></div><div class="divider-txt">התרעות אחרונות</div><div class="divider-line"></div></div>
-  <div class="panel-box" id="alert-feed">
-    <div style="color:var(--fg3);font-size:12px;font-family:var(--mono);padding:8px;text-align:center">מחכה לנתונים...</div>
-  </div>
+  <button class="share-btn" id="share-btn" onclick="shareLink()" style="margin-top:20px">🔗 שתף את האתר</button>
 
 </div><!-- #app -->
 
@@ -1223,10 +1310,15 @@ function connectSSE() {
       cat:    alert.cat,
       title:  alert.title || '',
     });
+    // highlight in shelter list
+    csAlerts = new Set(alert.data || []);
+    renderShelterList();
   });
 
   _es.addEventListener('alert_clear', () => {
     clearActiveBanner();
+    csAlerts = new Set();
+    renderShelterList();
   });
 
   _es.addEventListener('feed_update', e => {
@@ -1798,10 +1890,58 @@ updateClock();
 setInterval(updateClock, 1000);
 
 // ═══════════════════════════════════════════
+// CITY SHELTER LIST
+// ═══════════════════════════════════════════
+const CS_COLOR = {0:'#ff2244',15:'#ff5500',30:'#ff8c00',45:'#ffc200',60:'#a8e050',90:'#30d080',180:'#30d080'};
+const CS_LABEL = {0:'מיידי',15:'15 שנ׳',30:'30 שנ׳',45:'45 שנ׳',60:'דקה',90:'דקה וחצי',180:'3 דק׳'};
+let csAll = [], csFilter_ = '', csSearch_ = '', csAlerts = new Set();
+
+async function loadShelterCities() {
+  try {
+    const data = await fetch('/api/cities').then(r => r.json());
+    csAll = Object.entries(data)
+      .map(([name, c]) => ({ name, countdown: c.countdown }))
+      .sort((a, b) => a.countdown - b.countdown || a.name.localeCompare(b.name, 'he'));
+    renderShelterList();
+  } catch(_) {}
+}
+
+function renderShelterList() {
+  let rows = csAll;
+  if (csFilter_ !== '') rows = rows.filter(c => String(c.countdown) === csFilter_);
+  if (csSearch_.trim()) rows = rows.filter(c => c.name.includes(csSearch_.trim()));
+  const el = document.getElementById('cs-list');
+  if (!rows.length) { el.innerHTML = '<div style="color:var(--fg3);font-size:11px;font-family:var(--mono);padding:8px">לא נמצאו ישובים</div>'; return; }
+  el.innerHTML = rows.map(c => {
+    const col = CS_COLOR[c.countdown] || '#30d080';
+    const lbl = CS_LABEL[c.countdown] || c.countdown + ' שנ׳';
+    const isA = csAlerts.has(c.name);
+    return `<div class="city-shelter-row${isA ? ' alert-active' : ''}">
+      <div class="cs-dot" style="background:${col}${isA ? ';box-shadow:0 0 5px '+col : ''}"></div>
+      <div class="cs-name">${c.name}</div>
+      <div class="cs-time" style="color:${col}">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+function csFilter(cd, el) {
+  csFilter_ = cd;
+  document.querySelectorAll('.cs-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderShelterList();
+}
+
+document.getElementById('cs-search')?.addEventListener('input', e => {
+  csSearch_ = e.target.value;
+  renderShelterList();
+});
+
+// ═══════════════════════════════════════════
 // Boot
 // ═══════════════════════════════════════════
 update();
 setInterval(update, REFRESH);
+loadShelterCities();
 </script>
 </body>
 </html>
